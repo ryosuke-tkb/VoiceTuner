@@ -14,11 +14,12 @@ class SpectralViewController: UIViewController {
     var audioInput: TempiAudioInput!
     var spectralView: SpectralView!
     
+    // called immediately after a screen has been displayed
     override func viewDidLoad() {
         super.viewDidLoad()
 
         spectralView = SpectralView(frame: self.view.bounds)
-        spectralView.backgroundColor = UIColor.black
+        spectralView.backgroundColor = UIColor.white
         
         self.view.addSubview(spectralView)
         
@@ -33,26 +34,23 @@ class SpectralViewController: UIViewController {
         imageView.image = UIImage(named: "G_clef.png")
         self.view.addSubview(imageView)
         
-        
-//        let noteRect = CGRect(x:100, y: 20, width: 100, height: 200)
-//        let noteImageView = UIImageView(frame: noteRect)
-//        
-//        // set Image display mode
-//        noteImageView.contentMode = .scaleAspectFit
-//        
-//        // set photo file
-//        noteImageView.image = UIImage(named: "hachibu.png")
-//        noteImageView.tag = 20
-//        self.view.addSubview(noteImageView)
-        
-        
         let audioInputCallback: TempiAudioInputCallback = { (timeStamp, numberOfFrames, samples) -> Void in
             self.gotSomeAudio(timeStamp: Double(timeStamp), numberOfFrames: Int(numberOfFrames), samples: samples)
         }
         
         audioInput = TempiAudioInput(audioInputCallback: audioInputCallback, sampleRate: 44100, numberOfChannels: 1)
         audioInput.startRecording()
-             
+        
+//         draw 5 line (more simply!!)
+//        let lineImage = self.makeScoreImage(pos_y: 50)
+//        let lineView = UIImageView(image: lineImage)
+//        self.view.addSubview(lineView)
+        
+//        self.makeScoreImage(pos_y: 100)
+//        self.makeScoreImage(pos_y: 150)
+//        self.makeScoreImage(pos_y: 200)
+//        self.makeScoreImage(pos_y: 250)
+        
         // make stop button
         let stopButton = UIButton()
         stopButton.setTitle("Stop", for: .normal)
@@ -72,6 +70,9 @@ class SpectralViewController: UIViewController {
         startButton.sizeToFit()
         startButton.frame = CGRect(x: self.view.bounds.midX - 80, y: self.view.bounds.midY, width: 80, height: 40)
         self.view.addSubview(startButton)
+        
+        let viewCount = self.view.subviews.count
+        print("UIView has \(viewCount)")
     }
 
     func gotSomeAudio(timeStamp: Double, numberOfFrames: Int, samples: [Float]) {
@@ -100,6 +101,30 @@ class SpectralViewController: UIViewController {
     func startButtonEvent(sender: UIButton) {
         print("start button pushed")
         audioInput.startRecording()
+    }
+    
+    // function name isn't match. drawLine is more proper
+   func makeScoreImage(pos_y: CGFloat) -> UIImage {
+//        let viewWidth = self.view.bounds.size.width
+//        let viewHeight = self.view.bounds.size.height
+        
+        let size = view.bounds.size
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
+        
+        let line = UIBezierPath()
+        line.move(to: CGPoint(x: 0, y: pos_y))
+        line.addLine(to: CGPoint(x: 100, y: pos_y))
+        line.close()
+        
+        UIColor.black.setStroke()
+        UIColor.black.setFill()
+        line.lineWidth = 5.0
+        line.stroke()
+        
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return image!
     }
     
     override func didReceiveMemoryWarning() {

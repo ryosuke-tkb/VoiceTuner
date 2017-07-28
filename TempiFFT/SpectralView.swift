@@ -11,7 +11,8 @@ import UIKit
 class SpectralView: UIView {
 
     var fft: TempiFFT!
-
+    let start = Date()
+    
     override func draw(_ rect: CGRect) {
         
         if fft == nil {
@@ -32,7 +33,8 @@ class SpectralView: UIView {
         // set subview tag (It's important for change position)
         noteImageView.tag = 20
         
-        self.addSubview(noteImageView)
+        // this process add Subview so, subview count is increase every call
+        // self.addSubview(noteImageView)
         
         self.drawSpectrum(context: context!)
         
@@ -42,17 +44,17 @@ class SpectralView: UIView {
         // If you need FFT Hz label
         //self.drawLabels(context: context!)
         
-        // draw 5 line (more simply!!)
-        self.makeScoreImage(context: context!, pos_y: 50)
-        self.makeScoreImage(context: context!, pos_y: 100)
-        self.makeScoreImage(context: context!, pos_y: 150)
-        self.makeScoreImage(context: context!, pos_y: 200)
-        self.makeScoreImage(context: context!, pos_y: 250)
+
+        let viewCount = self.subviews.count
+        print("UIView has \(viewCount)")
+//        let time = Date().timeIntervalSince(start)
+//        print("\(time)")
     }
     
     private func drawSpectrum(context: CGContext) {
         let viewWidth = self.bounds.size.width
         let viewHeight = self.bounds.size.height
+        
         let plotYStart: CGFloat = 48.0
         
         // Pushes a copy of the current graphics state onto the graphics state stack for the context.
@@ -62,6 +64,7 @@ class SpectralView: UIView {
         // Changes the origins of the user coordinate system in a context
 //        context.translateBy(x: 0, y: -viewHeight)
         
+        /*
         // UIColor array
         let colors = [UIColor.green.cgColor, UIColor.yellow.cgColor, UIColor.red.cgColor]
         let gradient = CGGradient(
@@ -70,7 +73,7 @@ class SpectralView: UIView {
             locations: [0.0, 0.3, 0.6])
         
         var x: CGFloat = 0.0
-        /*
+        
         let count = fft.numberOfBands
         
         // Draw the spectrum.
@@ -108,23 +111,17 @@ class SpectralView: UIView {
         //Ryosuke add
         context.setLineWidth(5.0)
         
-        let r1: CGRect = CGRect(x:0, y:0, width:viewWidth, height:viewHeight)
-        context.setFillColor(CGColor(colorSpace: CGColorSpaceCreateDeviceRGB(), components: [1.0, 1.0, 1.0, 1.0])!)
-        context.addRect(r1)
-        context.fill(r1)
-        context.fillPath()
-        
         let r2: CGRect = CGRect(x:0, y:CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width:viewWidth-50, height:5)
         context.setFillColor(CGColor(colorSpace:CGColorSpaceCreateDeviceRGB(), components: [1.0, 0.0, 0.0, 1.0])!)
         context.addRect(r2)
         context.fill(r2)
         context.fillPath()
-        
-        guard let fetchNoteImage = self.viewWithTag(20) else {
-            print("not found")
-            return
-        }
-        
+//        
+//        guard let fetchNoteImage = self.viewWithTag(20) else {
+//            print("not found")
+//            return
+//        }
+//        
         // Calculate the average magnitude of the frequency band bounded by lowFreq and highFreq, inclusive
 //         fetchNoteImage.frame = CGRect(x:200, y: CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width: 100, height: 200)
         
@@ -165,25 +162,6 @@ class SpectralView: UIView {
             x = freq / samplesPerPixel - pointSize / 2.0
             attrStr.draw(at: CGPoint(x: x, y: -40))
         }
-        
-        context.restoreGState()
-    }
-    
-    
-    // function name isn't match. drawLine is more proper
-    private func makeScoreImage(context: CGContext, pos_y: CGFloat) {
-        let viewWidth = self.bounds.size.width
-        let viewHeight = self.bounds.size.height
-        
-        context.saveGState()
-        context.scaleBy(x: 1, y: -1)
-        context.translateBy(x: 0, y: -viewHeight)
-        
-        context.setLineWidth(5.0)
-        context.setStrokeColor(UIColor.black.cgColor)
-        context.move(to: CGPoint(x: 0, y: pos_y))
-        context.addLine(to: CGPoint(x: viewWidth, y: pos_y))
-        context.strokePath()
         
         context.restoreGState()
     }

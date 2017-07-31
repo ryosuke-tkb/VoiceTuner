@@ -70,9 +70,6 @@ class SpectralViewController: UIViewController {
         startButton.sizeToFit()
         startButton.frame = CGRect(x: self.view.bounds.midX - 80, y: self.view.bounds.midY, width: 80, height: 40)
         self.view.addSubview(startButton)
-        
-        let viewCount = self.view.subviews.count
-        print("UIView has \(viewCount)")
     }
 
     func gotSomeAudio(timeStamp: Double, numberOfFrames: Int, samples: [Float]) {

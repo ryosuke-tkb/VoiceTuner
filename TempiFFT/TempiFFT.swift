@@ -29,6 +29,7 @@ let m = fft.magnitudeAtBand(i)
 Note that TempiFFT expects a mono signal (i.e. numChannels == 1) which is ideal for performance.
 */
 
+// https://developer.apple.com/documentation/accelerate/vdsp
 
 import Foundation
 import Accelerate
@@ -59,6 +60,8 @@ import Accelerate
     // After performing the FFT, contains size/2 magnitudes, one for each frequency band.
     private var magnitudes: [Float]!
     
+    private var cepMagnitudes: [Float]!
+    
     /// After calling calculateLinearBands() or calculateLogarithmicBands(), contains a magnitude for each band.
     private(set) var bandMagnitudes: [Float]!
     
@@ -87,6 +90,7 @@ import Accelerate
     private var fftSetup:FFTSetup
     private var hasPerformedFFT: Bool = false
     private var complexBuffer: DSPSplitComplex!
+    private var cepComplexBuffer: DSPSplitComplex!
     
     /// Instantiate the FFT.
     /// - Parameter withSize: The length of the sample buffer we'll be analyzing. Must be a power of 2. The resulting ```magnitudes``` are of length ```inSize/2```.
@@ -112,6 +116,10 @@ import Accelerate
         var real = [Float](repeating: 0.0, count: self.halfSize)
         var imaginary = [Float](repeating: 0.0, count: self.halfSize)
         self.complexBuffer = DSPSplitComplex(realp: &real, imagp: &imaginary)
+        
+        var cepReal = [Float](repeating: 0.0, count: self.halfSize)
+        var cepImaginary = [Float](repeating: 0.0, count: self.halfSize)
+        self.cepComplexBuffer = DSPSplitComplex(realp: &cepReal, imagp: &cepImaginary)
     }
     
     deinit {
@@ -123,6 +131,8 @@ import Accelerate
     /// - Parameter inMonoBuffer: Audio data in mono format
     func fftForward(_ inMonoBuffer:[Float]) {
         
+        // inMonoBuffer　contains 512 Samples
+        // analysisBuffer contains FFT data
         var analysisBuffer = inMonoBuffer
         
         // If we have a window, apply it now. Since 99.9% of the time the window array will be exactly the same, an optimization would be to create it once and cache it, possibly caching it by size.
@@ -155,6 +165,9 @@ import Accelerate
         // Doing the job of vDSP_ctoz 😒. (See below.)
         var reals = [Float]()
         var imags = [Float]()
+        
+        //
+        // enumerated is equai withindex
         for (idx, element) in analysisBuffer.enumerated() {
             if idx % 2 == 0 {
                 reals.append(element)
@@ -181,6 +194,59 @@ import Accelerate
         vDSP_zvmags(&(self.complexBuffer!), 1, &self.magnitudes!, 1, UInt(self.halfSize))
         
         self.hasPerformedFFT = true
+        
+        // Ryosuke Added
+        let magLog: [Float] = magnitudes.map{log10f($0)}
+        var cepAnalysisBuffer = magLog
+        if self.windowType != .none {
+            
+            if self.window == nil {
+                self.window = [Float](repeating: 0.0, count: size)
+                
+                switch self.windowType {
+                case .hamming:
+                    vDSP_hann_window(&self.window!, UInt(size), Int32(vDSP_HANN_NORM))
+                case .hanning:
+                    vDSP_hamm_window(&self.window!, UInt(size), 0)
+                default:
+                    break
+                }
+            }
+            
+            // Apply the window
+            vDSP_vmul(magLog, 1, self.window, 1, &cepAnalysisBuffer, 1, UInt(magLog.count))
+        }
+        
+        // Doing the job of vDSP_ctoz 😒. (See below.)
+        var cepReals = [Float]()
+        var cepImags = [Float]()
+        
+        //
+        // enumerated is equai withindex
+        for (idx, element) in cepAnalysisBuffer.enumerated() {
+            if idx % 2 == 0 {
+                cepReals.append(element)
+            } else {
+                cepImags.append(element)
+            }
+        }
+        
+        let logSize :Float = Float(cepAnalysisBuffer.count)
+        let loglogSize :Int  = Int(log2f(logSize))
+        self.cepComplexBuffer = DSPSplitComplex(realp: UnsafeMutablePointer(mutating: cepReals), imagp: UnsafeMutablePointer(mutating: cepImags))
+        vDSP_fft_zrip(self.fftSetup, &(self.cepComplexBuffer!), 1, UInt(loglogSize), Int32(FFT_INVERSE))
+        
+        self.cepMagnitudes = [Float](repeating: 0.0, count: self.halfSize)
+        vDSP_zvmags(&(self.cepComplexBuffer!), 1, &self.cepMagnitudes!, 1, UInt(self.halfSize))
+        
+        for i in 0..<cepMagnitudes.count {
+            if cepMagnitudes[i].isNaN {
+                print("index \(i) is Nan")
+            }else{
+                    print(cepMagnitudes[i])
+            }
+        }
+        
     }
     
     /// Applies logical banding on top of the spectrum data. The bands are spaced linearly throughout the spectrum.
@@ -308,6 +374,16 @@ import Accelerate
         assert(bandMagnitudes != nil, "*** Call calculateLinearBands() or calculateLogarithmicBands() first")
         
         return bandMagnitudes[inBand]
+    }
+    
+    
+    func cepMagnitudeAtIndex(_ inBand: Int) -> Float {
+        assert(hasPerformedFFT, "*** Perform the FFT first.")
+        if (inBand < 0 || inBand > self.halfSize) {
+            return 0.0
+        }
+        
+        return self.cepMagnitudes[inBand]
     }
     
     /// Get the magnitude of the requested frequency in the spectrum.

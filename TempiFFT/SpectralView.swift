@@ -46,7 +46,6 @@ class SpectralView: UIView {
         
 
         let viewCount = self.subviews.count
-        print("UIView has \(viewCount)")
 //        let time = Date().timeIntervalSince(start)
 //        print("\(time)")
     }
@@ -109,6 +108,14 @@ class SpectralView: UIView {
         */
         
         //Ryosuke add
+        
+//        let count = fft.numberOfBands
+//      
+//        for i in 0...10 {
+//            let freq = fft.magnitudeAtBand(i)
+//            let freqBand = fft.frequencyAtBand(i)
+//            print("\(freq)th: \(freqBand)Hz\n")
+//        }
         context.setLineWidth(5.0)
         
         let r2: CGRect = CGRect(x:0, y:CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width:viewWidth-50, height:5)

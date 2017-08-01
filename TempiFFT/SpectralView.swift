@@ -44,8 +44,6 @@ class SpectralView: UIView {
         // If you need FFT Hz label
         //self.drawLabels(context: context!)
         
-
-        let viewCount = self.subviews.count
 //        let time = Date().timeIntervalSince(start)
 //        print("\(time)")
     }
@@ -59,9 +57,9 @@ class SpectralView: UIView {
         // Pushes a copy of the current graphics state onto the graphics state stack for the context.
         context.saveGState()
         // Changes the scale of the user coordinate system in a context
-//        context.scaleBy(x: 1, y: -1)
+        context.scaleBy(x: 1, y: -1)
         // Changes the origins of the user coordinate system in a context
-//        context.translateBy(x: 0, y: -viewHeight)
+        context.translateBy(x: 0, y: -viewHeight)
         
         /*
         // UIColor array
@@ -109,29 +107,73 @@ class SpectralView: UIView {
         
         //Ryosuke add
         
-//        let count = fft.numberOfBands
-//      
-//        for i in 0...10 {
-//            let freq = fft.magnitudeAtBand(i)
-//            let freqBand = fft.frequencyAtBand(i)
-//            print("\(freq)th: \(freqBand)Hz\n")
-//        }
+        context.move(to: CGPoint(x: 5, y: 5))
+//        let count:Int = fft.numberOfBands
+        let count = 256
+        let offset :Float = 50
+        
+        for i in 0 ..< count {
+            let xPos :Int = i * 1 + 5
+            let cepCoef = fft.getMagnitudes(i)
+            var yPos :Float
+            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100) {
+                yPos =  offset
+            }else {
+                yPos = TempiFFT.toDB(cepCoef) + 32 + offset
+            }
+            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
+        }
+        
+        context.setStrokeColor(UIColor.black.cgColor)
+        context.strokePath()
+        
+        let drawOffsetY  :Float = 150
+        
+        context.move(to: CGPoint(x:5, y:Int(drawOffsetY)))
+        let fftcount = 512
+        
+        for i in 0 ..< fftcount {
+            let xPos :Int = i * 1 + 5
+            let cepCoef = fft.getFftRawOutput(i)
+            var yPos :Float
+            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100) {
+                yPos = drawOffsetY
+            }else {
+                yPos = TempiFFT.toDB(cepCoef) + 32 + drawOffsetY
+            }
+            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
+        }
+        context.setStrokeColor(UIColor.red.cgColor)
+        context.strokePath()
+        
+        
+        let drawCepOffsetY  :Float = 200
+        
+        context.move(to: CGPoint(x:5, y:Int(drawCepOffsetY)))
+        let cepcount = 256
+        
+        for i in 0 ..< cepcount {
+            let xPos :Int = i * 1 + 5
+            let cepCoef = fft.cepMagnitudeAtIndex(i)
+            var yPos :Float
+            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100 || cepCoef < -100) {
+                yPos = drawCepOffsetY
+            }else {
+                yPos = cepCoef * 10
+            }
+            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
+        }
+        context.setStrokeColor(UIColor.green.cgColor)
+        context.strokePath()
+        
+    
         context.setLineWidth(5.0)
         
-        let r2: CGRect = CGRect(x:0, y:CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width:viewWidth-50, height:5)
-        context.setFillColor(CGColor(colorSpace:CGColorSpaceCreateDeviceRGB(), components: [1.0, 0.0, 0.0, 1.0])!)
-        context.addRect(r2)
-        context.fill(r2)
-        context.fillPath()
-//        
-//        guard let fetchNoteImage = self.viewWithTag(20) else {
-//            print("not found")
-//            return
-//        }
-//        
-        // Calculate the average magnitude of the frequency band bounded by lowFreq and highFreq, inclusive
-//         fetchNoteImage.frame = CGRect(x:200, y: CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width: 100, height: 200)
-        
+//        let r2: CGRect = CGRect(x:0, y:CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width:viewWidth-50, height:5)
+//        context.setFillColor(CGColor(colorSpace:CGColorSpaceCreateDeviceRGB(), components: [1.0, 0.0, 0.0, 1.0])!)
+//        context.addRect(r2)
+//        context.fill(r2)
+//        context.fillPath()
         
         // Sets the current graphics state to the state most recently saved
         context.restoreGState()

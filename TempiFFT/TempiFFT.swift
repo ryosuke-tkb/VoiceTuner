@@ -60,6 +60,9 @@ import Accelerate
     // After performing the FFT, contains size/2 magnitudes, one for each frequency band.
     private var magnitudes: [Float]!
     
+    private var fftRawOutput: [Float]!
+    
+    // [ryo] magnitude for Cepstrum analysis
     private var cepMagnitudes: [Float]!
     
     /// After calling calculateLinearBands() or calculateLogarithmicBands(), contains a magnitude for each band.
@@ -90,6 +93,8 @@ import Accelerate
     private var fftSetup:FFTSetup
     private var hasPerformedFFT: Bool = false
     private var complexBuffer: DSPSplitComplex!
+    private var copyComplexBuffer: DSPSplitComplex!
+    // [ryo] for Cepstrum analysis
     private var cepComplexBuffer: DSPSplitComplex!
     
     /// Instantiate the FFT.
@@ -117,6 +122,13 @@ import Accelerate
         var imaginary = [Float](repeating: 0.0, count: self.halfSize)
         self.complexBuffer = DSPSplitComplex(realp: &real, imagp: &imaginary)
         
+        // [ryo] Init the copyComplexBuffer
+        var copyReal = [Float](repeating: 0.0, count: self.size)
+        var copyImaginary = [Float](repeating: 0.0, count: self.size)
+        self.complexBuffer = DSPSplitComplex(realp: &copyReal, imagp: &copyImaginary)
+
+        
+        // [ryo] Init cepComplexBuffer
         var cepReal = [Float](repeating: 0.0, count: self.halfSize)
         var cepImaginary = [Float](repeating: 0.0, count: self.halfSize)
         self.cepComplexBuffer = DSPSplitComplex(realp: &cepReal, imagp: &cepImaginary)
@@ -175,6 +187,7 @@ import Accelerate
                 imags.append(element)
             }
         }
+        
         self.complexBuffer = DSPSplitComplex(realp: UnsafeMutablePointer(mutating: reals), imagp: UnsafeMutablePointer(mutating: imags))
         
         // This compiles without error but doesn't actually work. It results in garbage values being stored to the complexBuffer's real and imag parts. Why? The above workaround is undoubtedly tons slower so it would be good to get vDSP_ctoz working again.
@@ -192,30 +205,40 @@ import Accelerate
         // Store and square (for better visualization & conversion to db) the magnitudes
         self.magnitudes = [Float](repeating: 0.0, count: self.halfSize)
         vDSP_zvmags(&(self.complexBuffer!), 1, &self.magnitudes!, 1, UInt(self.halfSize))
+
+        self.fftRawOutput = [Float](repeating: 0.0, count: self.size)
+//        vDSP_zvmags(&(self.complexBuffer!), 1, &self.fftRawOutput!, 1, UInt(self.size))
+        for i in 0 ..< self.size {
+            if (i < self.halfSize) {
+                self.fftRawOutput[i] = self.magnitudes[i]
+            }else{
+                self.fftRawOutput[i] = self.magnitudes[self.size - i - 1]
+            }
+        }
         
         self.hasPerformedFFT = true
         
-        // Ryosuke Added
-        let magLog: [Float] = magnitudes.map{log10f($0)}
+        // [ryo]this part task is to calculate cepstrum
+        let magLog: [Float] = self.fftRawOutput.map{log10f($0)}
         var cepAnalysisBuffer = magLog
-        if self.windowType != .none {
-            
-            if self.window == nil {
-                self.window = [Float](repeating: 0.0, count: size)
-                
-                switch self.windowType {
-                case .hamming:
-                    vDSP_hann_window(&self.window!, UInt(size), Int32(vDSP_HANN_NORM))
-                case .hanning:
-                    vDSP_hamm_window(&self.window!, UInt(size), 0)
-                default:
-                    break
-                }
-            }
-            
-            // Apply the window
-            vDSP_vmul(magLog, 1, self.window, 1, &cepAnalysisBuffer, 1, UInt(magLog.count))
-        }
+//        if self.windowType != .none {
+//            
+//            if self.window == nil {
+//                self.window = [Float](repeating: 0.0, count: size)
+//                
+//                switch self.windowType {
+//                case .hamming:
+//                    vDSP_hann_window(&self.window!, UInt(size), Int32(vDSP_HANN_NORM))
+//                case .hanning:
+//                    vDSP_hamm_window(&self.window!, UInt(size), 0)
+//                default:
+//                    break
+//                }
+//            }
+//            
+//            // Apply the window
+//            vDSP_vmul(magLog, 1, self.window, 1, &cepAnalysisBuffer, 1, UInt(magLog.count))
+//        }
         
         // Doing the job of vDSP_ctoz 😒. (See below.)
         var cepReals = [Float]()
@@ -234,19 +257,58 @@ import Accelerate
         let logSize :Float = Float(cepAnalysisBuffer.count)
         let loglogSize :Int  = Int(log2f(logSize))
         self.cepComplexBuffer = DSPSplitComplex(realp: UnsafeMutablePointer(mutating: cepReals), imagp: UnsafeMutablePointer(mutating: cepImags))
-        vDSP_fft_zrip(self.fftSetup, &(self.cepComplexBuffer!), 1, UInt(loglogSize), Int32(FFT_INVERSE))
+        vDSP_fft_zrip(self.fftSetup, &(self.cepComplexBuffer!), 1, UInt(self.log2Size), Int32(FFT_INVERSE))
         
         self.cepMagnitudes = [Float](repeating: 0.0, count: self.halfSize)
         vDSP_zvmags(&(self.cepComplexBuffer!), 1, &self.cepMagnitudes!, 1, UInt(self.halfSize))
+        var realPointer :UnsafeMutablePointer = cepComplexBuffer.realp
+        print("real[2] = \(realPointer[2])")
+//        print("cepMagnitude.count = \(cepMagnitudes.count)")
+//        for i in 0..<cepMagnitudes.count {
+//            if cepMagnitudes[i].isNaN {
+//                print("index \(i) is Nan")
+//            }else{
+//                    print(cepMagnitudes[i])
+//            }
+//        }
         
-        for i in 0..<cepMagnitudes.count {
-            if cepMagnitudes[i].isNaN {
-                print("index \(i) is Nan")
-            }else{
-                    print(cepMagnitudes[i])
-            }
+    }
+ 
+    // [ryo]
+    func getHalfSize() -> Int {
+        assert(hasPerformedFFT, "*** Perform the FFT first.")
+        return self.halfSize
+    }
+    
+    // [ryo]
+    func getMagnitudes(_ index: Int) -> Float {
+        assert(hasPerformedFFT, "*** Perform the FFT first.")
+        if (index < 0 || index > self.halfSize) {
+            return 0.0
+        } else {
+            return self.magnitudes[index]
         }
-        
+    }
+    
+    // [ryo]
+    func getFftRawOutput(_ index: Int) -> Float {
+        assert(hasPerformedFFT, "*** Perform the FFT first.")
+        if (index < 0 || index > self.size) {
+            return 0.0
+        } else {
+            return self.fftRawOutput[index]
+        }
+    }
+    
+    // [ryo]
+    func getCepOutputReal(_ index: Int) -> Float {
+        assert(hasPerformedFFT, "*** Perform the FFT first.")
+        let pointer :UnsafeMutablePointer = self.cepComplexBuffer.realp
+        if (index < 0 || index > self.halfSize) {
+            return 0.0
+        }else {
+        return pointer[index]
+        }
     }
     
     /// Applies logical banding on top of the spectrum data. The bands are spaced linearly throughout the spectrum.
@@ -377,6 +439,7 @@ import Accelerate
     }
     
     
+    // [ryo] return cepstrum coefficient
     func cepMagnitudeAtIndex(_ inBand: Int) -> Float {
         assert(hasPerformedFFT, "*** Perform the FFT first.")
         if (inBand < 0 || inBand > self.halfSize) {

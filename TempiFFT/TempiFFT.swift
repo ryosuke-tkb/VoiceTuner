@@ -97,6 +97,9 @@ import Accelerate
     // [ryo] for Cepstrum analysis
     private var cepComplexBuffer: DSPSplitComplex!
     
+    // [ryo]
+    private var cepstrum: [Float]!
+    
     /// Instantiate the FFT.
     /// - Parameter withSize: The length of the sample buffer we'll be analyzing. Must be a power of 2. The resulting ```magnitudes``` are of length ```inSize/2```.
     /// - Parameter sampleRate: Sampling rate of the provided audio data.
@@ -205,20 +208,22 @@ import Accelerate
         // Store and square (for better visualization & conversion to db) the magnitudes
         self.magnitudes = [Float](repeating: 0.0, count: self.halfSize)
         vDSP_zvmags(&(self.complexBuffer!), 1, &self.magnitudes!, 1, UInt(self.halfSize))
-
-        self.fftRawOutput = [Float](repeating: 0.0, count: self.size)
-//        vDSP_zvmags(&(self.complexBuffer!), 1, &self.fftRawOutput!, 1, UInt(self.size))
-        for i in 0 ..< self.size {
-            if (i < self.halfSize) {
-                self.fftRawOutput[i] = self.magnitudes[i]
-            }else{
-                self.fftRawOutput[i] = self.magnitudes[self.size - i - 1]
-            }
-        }
         
         self.hasPerformedFFT = true
         
+        self.cepstrum = calculateCepstrum(inMonoBuffer)
+        /*
         // [ryo]this part task is to calculate cepstrum
+         
+        self.fftRawOutput = [Float](repeating: 0.0, count: self.size)
+        //        vDSP_zvmags(&(self.complexBuffer!), 1, &self.fftRawOutput!, 1, UInt(self.size))
+        for i in 0 ..< self.size {
+        if (i < self.halfSize) {
+            self.fftRawOutput[i] = self.magnitudes[i]
+            }else{
+            self.fftRawOutput[i] = self.magnitudes[self.size - i - 1]
+            }
+        }
         let magLog: [Float] = self.fftRawOutput.map{log10f($0)}
         var cepAnalysisBuffer = magLog
 //        if self.windowType != .none {
@@ -262,7 +267,6 @@ import Accelerate
         self.cepMagnitudes = [Float](repeating: 0.0, count: self.halfSize)
         vDSP_zvmags(&(self.cepComplexBuffer!), 1, &self.cepMagnitudes!, 1, UInt(self.halfSize))
         var realPointer :UnsafeMutablePointer = cepComplexBuffer.realp
-        print("real[2] = \(realPointer[2])")
 //        print("cepMagnitude.count = \(cepMagnitudes.count)")
 //        for i in 0..<cepMagnitudes.count {
 //            if cepMagnitudes[i].isNaN {
@@ -271,7 +275,7 @@ import Accelerate
 //                    print(cepMagnitudes[i])
 //            }
 //        }
-        
+        */
     }
  
     // [ryo]
@@ -309,6 +313,12 @@ import Accelerate
         }else {
         return pointer[index]
         }
+    }
+    
+    // [ryo]
+    func getCepstrum() -> [Float] {
+        assert(hasPerformedFFT, "*** Perform the FFT first.")
+        return self.cepstrum
     }
     
     /// Applies logical banding on top of the spectrum data. The bands are spaced linearly throughout the spectrum.
@@ -497,6 +507,67 @@ import Accelerate
         }
         
         return total
+    }
+    
+    func calculateCepstrum(_ inMonoBuffer:[Float]) -> [Float]{
+        var samples = inMonoBuffer
+        let inputSize = inMonoBuffer.count
+        
+        var reals = [Float](repeating: 0.0, count: inputSize)
+        var imgs = [Float](repeating: 0.0, count: inputSize)
+        var splitComplex = DSPSplitComplex(realp: &reals, imagp: &imgs)
+        let src = UnsafeRawPointer(samples).bindMemory(to: DSPComplex.self, capacity: inputSize/2)
+        vDSP_ctoz(src, 2, &splitComplex, 1, vDSP_Length(inputSize/2))
+        
+        let fftSize = 1024
+        let log2fftSize = vDSP_Length(log2(Double(fftSize)))
+        
+        let setup = vDSP_create_fftsetup(log2fftSize, FFTRadix(FFT_RADIX2))
+        
+        vDSP_fft_zrip(setup!, &splitComplex, 1, log2fftSize, FFTDirection(FFT_FORWARD))
+        
+        var scale :Float = 1/2
+        vDSP_vsmul(splitComplex.realp, 1, &scale, splitComplex.realp, 1, vDSP_Length(inputSize/2))
+        vDSP_vsmul(splitComplex.imagp, 1, &scale, splitComplex.imagp, 1, vDSP_Length(inputSize/2))
+        
+        let fftOutputReal = Array(UnsafeBufferPointer(start: splitComplex.realp, count: inputSize/2))
+        let fftOutputImag = Array(UnsafeBufferPointer(start: splitComplex.imagp, count: inputSize/2))
+        
+        var magnitudes = [Float]()
+        
+        for index in 0 ..< inputSize {
+            if (index < inputSize/2) {
+                let ri = fftOutputReal[index]
+                let ii = fftOutputImag[index]
+                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
+            }else{
+                let ri = fftOutputReal[inputSize - index - 1]
+                let ii = fftOutputImag[inputSize - index - 1]
+                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
+            }
+        }
+        
+        var ifftInputReal = [Float](repeating: 0.0, count: fftSize/2)
+        var ifftInputImag = [Float](repeating: 0.0, count: fftSize/2)
+        var ifftSplitComplex = DSPSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
+        let ifftSplitComplexSrc = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: fftSize/2)
+        vDSP_ctoz(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(fftSize/2))
+        
+        vDSP_fft_zrip(setup!, &ifftSplitComplex, 1, log2fftSize, FFTDirection(FFT_INVERSE))
+        
+        vDSP_vsmul(ifftSplitComplex.realp, 1, &scale, ifftSplitComplex.realp, 1, vDSP_Length(fftSize/2))
+        vDSP_vsmul(ifftSplitComplex.imagp, 1, &scale, ifftSplitComplex.imagp, 1, vDSP_Length(fftSize/2))
+        
+        let ifftOutputReal = Array(UnsafeBufferPointer(start: ifftSplitComplex.realp, count: fftSize/2))
+        let ifftOutputImag = Array(UnsafeBufferPointer(start: ifftSplitComplex.imagp, count: fftSize/2))
+
+        var cepstrum = [Float]()
+        for index in 0 ..< fftSize/2 {
+            let ri = ifftOutputReal[index]
+            let ii = ifftOutputImag[index]
+            cepstrum.append(sqrt(ri * ri + ii * ii))
+        }
+        return cepstrum
     }
     
     /// A convenience function that converts a linear magnitude (like those stored in ```magnitudes```) to db (which is log 10).

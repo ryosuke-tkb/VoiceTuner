@@ -211,7 +211,7 @@ import Accelerate
         
         self.hasPerformedFFT = true
         
-        self.cepstrum = calculateCepstrum(inMonoBuffer)
+//        self.cepstrum = calculateCepstrum(inMonoBuffer)
         /*
         // [ryo]this part task is to calculate cepstrum
          
@@ -287,7 +287,7 @@ import Accelerate
     // [ryo]
     func getMagnitudes(_ index: Int) -> Float {
         assert(hasPerformedFFT, "*** Perform the FFT first.")
-        if (index < 0 || index > self.halfSize) {
+        if (index < 0 || index > self.halfSize - 1) {
             return 0.0
         } else {
             return self.magnitudes[index]
@@ -509,6 +509,8 @@ import Accelerate
         return total
     }
     
+    
+    /*
     func calculateCepstrum(_ inMonoBuffer:[Float]) -> [Float]{
         var samples = inMonoBuffer
         let inputSize = inMonoBuffer.count
@@ -569,6 +571,7 @@ import Accelerate
         }
         return cepstrum
     }
+    */
     
     /// A convenience function that converts a linear magnitude (like those stored in ```magnitudes```) to db (which is log 10).
     class func toDB(_ inMagnitude: Float) -> Float {
@@ -576,4 +579,5 @@ import Accelerate
         let magnitude = max(inMagnitude, 0.000000000001)
         return 10 * log10f(magnitude)
     }
+ 
 }

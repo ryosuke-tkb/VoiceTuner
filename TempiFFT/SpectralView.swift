@@ -42,7 +42,7 @@ class SpectralView: UIView {
         // If this were more than a demo we'd take care to only draw them once.
         
         // If you need FFT Hz label
-        self.drawLabels(context: context!)
+//        self.drawLabels(context: context!)
         
 //        let time = Date().timeIntervalSince(start)
 //        print("\(time)")
@@ -62,54 +62,54 @@ class SpectralView: UIView {
         context.translateBy(x: 0, y: -viewHeight)
         
         
-        // UIColor array
-        let colors = [UIColor.green.cgColor, UIColor.yellow.cgColor, UIColor.red.cgColor]
-        let gradient = CGGradient(
-            colorsSpace: nil, // generic color space
-            colors: colors as CFArray,
-            locations: [0.0, 0.3, 0.6])
-        
-        var x: CGFloat = 0.0
-        
-        let count = fft.numberOfBands
-        
-        // Draw the spectrum.
-        let maxDB: Float = 64.0
-        let minDB: Float = -32.0
-        let headroom = maxDB - minDB
-        let colWidth = tempi_round_device_scale(d: viewWidth / CGFloat(count))
-        
-        for i in 0..<count {
-            let magnitude = fft.magnitudeAtBand(i)
-            
-            // Incoming magnitudes are linear, making it impossible to see very low or very high values. Decibels to the rescue!
-            var magnitudeDB = TempiFFT.toDB(magnitude)
-            
-            // Normalize the incoming magnitude so that -Inf = 0
-            magnitudeDB = max(0, magnitudeDB + abs(minDB))
-            
-            let dbRatio = min(1.0, magnitudeDB / headroom)
-            let magnitudeNorm = CGFloat(dbRatio) * viewHeight
-            
-            let colRect: CGRect = CGRect(x: x, y: plotYStart, width: colWidth, height: magnitudeNorm)
-            
-            let startPoint = CGPoint(x: viewWidth / 2, y: 0)
-            let endPoint = CGPoint(x: viewWidth / 2, y: viewHeight)
-            
-            context.saveGState()
-            context.clip(to: colRect)
-            context.drawLinearGradient(gradient!, start: startPoint, end: endPoint, options: CGGradientDrawingOptions(rawValue: 0))
-            context.restoreGState()
-            
-            x += colWidth
-        }
-        
+//        // UIColor array
+//        let colors = [UIColor.green.cgColor, UIColor.yellow.cgColor, UIColor.red.cgColor]
+//        let gradient = CGGradient(
+//            colorsSpace: nil, // generic color space
+//            colors: colors as CFArray,
+//            locations: [0.0, 0.3, 0.6])
+//        
+//        var x: CGFloat = 0.0
+//        
+//        let count = fft.numberOfBands
+//        
+//        // Draw the spectrum.
+//        let maxDB: Float = 64.0
+//        let minDB: Float = -32.0
+//        let headroom = maxDB - minDB
+//        let colWidth = tempi_round_device_scale(d: viewWidth / CGFloat(count))
+//        
+//        for i in 0..<count {
+//            let magnitude = fft.magnitudeAtBand(i)
+//            
+//            // Incoming magnitudes are linear, making it impossible to see very low or very high values. Decibels to the rescue!
+//            var magnitudeDB = TempiFFT.toDB(magnitude)
+//            
+//            // Normalize the incoming magnitude so that -Inf = 0
+//            magnitudeDB = max(0, magnitudeDB + abs(minDB))
+//            
+//            let dbRatio = min(1.0, magnitudeDB / headroom)
+//            let magnitudeNorm = CGFloat(dbRatio) * viewHeight
+//            
+//            let colRect: CGRect = CGRect(x: x, y: plotYStart, width: colWidth, height: magnitudeNorm)
+//            
+//            let startPoint = CGPoint(x: viewWidth / 2, y: 0)
+//            let endPoint = CGPoint(x: viewWidth / 2, y: viewHeight)
+//            
+//            context.saveGState()
+//            context.clip(to: colRect)
+//            context.drawLinearGradient(gradient!, start: startPoint, end: endPoint, options: CGGradientDrawingOptions(rawValue: 0))
+//            context.restoreGState()
+//            
+//            x += colWidth
+//        }
+//        
         
         //Ryosuke add
         context.move(to: CGPoint(x: 5, y: 5))
 
 //        let count:Int = fft.numberOfBands
-//        let count = 256
+        let count = 256
         let offset :Float = 50
         
         for i in 0 ..< count {
@@ -133,7 +133,7 @@ class SpectralView: UIView {
         
         for i in 0 ..< fftcount {
             let xPos :Int = i * 1 + 5
-            let cepCoef = Float(0.0)
+            let cepCoef = fft.getFftRawOutput(i)
             var yPos :Float
             if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100) {
                 yPos = drawOffsetY
@@ -144,35 +144,36 @@ class SpectralView: UIView {
         }
         context.setStrokeColor(UIColor.red.cgColor)
         context.strokePath()
-     
-//        let drawCepOffsetY  :Float = 200
-//        
-//        context.move(to: CGPoint(x:5, y:Int(drawCepOffsetY)))
-//        let cepcount = 256
-//        let cepstrum = fft.getCepstrum()
-//        
-//        for i in 0 ..< cepcount {
-//            let xPos :Int = i * 1 + 5
-//            let cepCoef = cepstrum[i]
-//            print("cepstrum(\(i)): \(cepCoef)")
-//            var yPos :Float
-//            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100 || cepCoef < -100) {
-//                yPos = drawCepOffsetY
-//            }else {
-//                yPos = cepCoef * 10
-//            }
-//            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
-//        }
-//        context.setStrokeColor(UIColor.green.cgColor)
-//        context.strokePath()
+            
+        let drawCepOffsetY  :Float = 200
+        
+        context.move(to: CGPoint(x:5, y:Int(drawCepOffsetY)))
+        let cepcount = 256
+        let cepstrum = fft.getCepstrum()
+        
+        for i in 0 ..< cepcount {
+            let xPos :Int = i * 1 + 5
+            let cepCoef = cepstrum[i]
+            print("cepstrum(\(i)): \(cepCoef)")
+            var yPos :Float
+            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100 || cepCoef < -100) {
+                yPos = drawCepOffsetY
+            }else {
+                yPos = cepCoef * 5
+            }
+            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
+        }
+        context.setStrokeColor(UIColor.green.cgColor)
+        context.strokePath()
         
     
-        context.setLineWidth(5.0)
-        let r2: CGRect = CGRect(x:0, y:CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width:viewWidth-50, height:5)
-        context.setFillColor(CGColor(colorSpace:CGColorSpaceCreateDeviceRGB(), components: [1.0, 0.0, 0.0, 1.0])!)
-        context.addRect(r2)
-        context.fill(r2)
-        context.fillPath()
+//        context.setLineWidth(5.0)
+//        let r2: CGRect = CGRect(x:0, y:CGFloat(fft.averageMagnitude(lowFreq: 60.0, highFreq: 1200.0)), width:viewWidth-50, height:5)
+//        context.setFillColor(CGColor(colorSpace:CGColorSpaceCreateDeviceRGB(), components: [1.0, 0.0, 0.0, 1.0])!)
+//        context.addRect(r2)
+//        context.fill(r2)
+//        context.fillPath()
+        
 //         Sets the current graphics state to the state most recently saved
         context.restoreGState()
     }

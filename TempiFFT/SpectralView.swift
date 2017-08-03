@@ -36,7 +36,7 @@ class SpectralView: UIView {
         // this process add Subview so, subview count is increase every call
         // self.addSubview(noteImageView)
         
-        self.drawSpectrum(context: context!)
+//        self.drawSpectrum(context: context!)
         
         // We're drawing static labels every time through our drawRect() which is a waste.
         // If this were more than a demo we'd take care to only draw them once.
@@ -116,10 +116,10 @@ class SpectralView: UIView {
             let xPos :Int = i * 1 + 5
             let cepCoef = fft.getMagnitudes(i)
             var yPos :Float
-            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100) {
+            if (cepCoef.isNaN || cepCoef.isInfinite) {
                 yPos =  offset
             }else {
-                yPos = TempiFFT.toDB(cepCoef) + 32 + offset
+                yPos = cepCoef * 5
             }
             context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
         }
@@ -154,7 +154,7 @@ class SpectralView: UIView {
         for i in 0 ..< cepcount {
             let xPos :Int = i * 1 + 5
             let cepCoef = cepstrum[i]
-            print("cepstrum(\(i)): \(cepCoef)")
+//            print("cepstrum(\(i)): \(cepCoef)")
             var yPos :Float
             if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100 || cepCoef < -100) {
                 yPos = drawCepOffsetY

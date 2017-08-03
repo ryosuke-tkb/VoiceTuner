@@ -132,7 +132,8 @@ class TempiAudioInput: NSObject {
             // This will have an impact on CPU usage. .01 gives 512 samples per frame on iPhone. (Probably .01 * 44100 rounded up.)
             // NB: This is considered a 'hint' and more often than not is just ignored.
             try audioSession.setPreferredIOBufferDuration(0.01)
-            
+//            try audioSession.setPreferredIOBufferDuration(0.1)
+
             audioSession.requestRecordPermission { (granted) -> Void in
                 if !granted {
                     print("*** record permission denied")

@@ -67,8 +67,6 @@ class SpectralViewController: UIViewController {
         }
         
         let stationaryPart = Array(inputBuffer[5000...5511])
-        print(stationaryPart.count)
-        
         let cepstrum :[Float] = calculateCepstrum(stationaryPart)
         
         let testDraw = drawLine(cepstrum)
@@ -150,7 +148,7 @@ class SpectralViewController: UIViewController {
     }
     
     func calculateCepstrum(_ inBuffer:[Float]) -> [Float] {
-        var samples = inBuffer
+        let samples = inBuffer
         let inputSize :Int = samples.count
         
         let label = UILabel(frame: CGRect(x: 30, y: 30, width: 200, height: 20))
@@ -190,13 +188,13 @@ class SpectralViewController: UIViewController {
             if (index < inputSize/2) {
                 let ri = fftRealValue.pointee
                 let ii = fftImagValue.pointee
-                magnitudes.append(20 * log10f(sqrt(ri * ri + ii * ii)))
+                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
                 fftRealValue += 1
                 fftImagValue += 1
             }else{
                 let ri = fftRealValue.pointee
                 let ii = fftImagValue.pointee
-                magnitudes.append(20 * log10f(sqrt(ri * ri + ii * ii)))
+                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
                 fftRealValue -= 1
                 fftImagValue -= 1
             }
@@ -207,7 +205,7 @@ class SpectralViewController: UIViewController {
         var ifftInputImag = [Float](repeating: 0.0, count: inputSize/2)
         var ifftSplitComplex = DSPSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
 //        let ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: fftSize)
-        let ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: inputSize)
+        var ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: inputSize)
         
   
 //        vDSP_ctoz(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(fftSize/2))
@@ -277,7 +275,6 @@ class SpectralViewController: UIViewController {
 //            print("\(i): \(yPos)")
             line.addLine(to : CGPoint(x: 2 * i + 5, y: Int(yPos)))
         }
-//        line.close()
         
         line.lineWidth = 1.0
         UIColor.brown.setStroke()

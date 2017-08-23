@@ -67,9 +67,9 @@ class SpectralViewController: UIViewController {
         }
         
         let stationaryPart = Array(inputBuffer[5000...5511])
-        let cepstrum :[Float] = calculateCepstrum(stationaryPart)
+        let cepstrum :[Double] = calculateCepstrum(stationaryPart)
         
-        let testDraw = drawLine(cepstrum)
+        let testDraw = drawLine(cepstrum.map{Float($0)})
         let drawView = UIImageView(image: testDraw)
 
         self.view.addSubview(drawView)
@@ -147,113 +147,86 @@ class SpectralViewController: UIViewController {
         return image!
     }
     
-    func calculateCepstrum(_ inBuffer:[Float]) -> [Float] {
-        let samples = inBuffer
+    func calculateCepstrum(_ inBuffer:[Float]) -> [Double] {
+        let samples = inBuffer.map{Double($0)}
         let inputSize :Int = samples.count
         
         let label = UILabel(frame: CGRect(x: 30, y: 30, width: 200, height: 20))
         label.text = "inputSize:" + String(inputSize)
         self.view.addSubview(label)
         
-        var reals = [Float](repeating: 0.0, count: inputSize/2)
-        var imgs = [Float](repeating: 0.0, count: inputSize/2)
-        var splitComplex = DSPSplitComplex(realp: &reals, imagp: &imgs)
-        let complexBuffer :UnsafePointer<DSPComplex> = UnsafeRawPointer(samples).bindMemory(to: DSPComplex.self, capacity: inputSize)
+        var reals = [Double](repeating: 0.0, count: inputSize/2)
+        var imgs = [Double](repeating: 0.0, count: inputSize/2)
+        var splitComplex = DSPDoubleSplitComplex(realp: &reals, imagp: &imgs)
+        let complexBuffer :UnsafePointer<DSPDoubleComplex> = UnsafeRawPointer(samples).bindMemory(to: DSPDoubleComplex.self, capacity: inputSize)
         
-        vDSP_ctoz(complexBuffer, 2, &splitComplex, 1, vDSP_Length(inputSize/2))
+        vDSP_ctozD(complexBuffer, 2, &splitComplex, 1, vDSP_Length(inputSize/2))
         
         let fftSize = inputSize
         let log2fftSize = vDSP_Length(log2(Double(fftSize)))
-        print("log2fftSize = \(log2fftSize)")
-        let setup = vDSP_create_fftsetup(log2fftSize, FFTRadix(FFT_RADIX2))
+        let setup = vDSP_create_fftsetupD(log2fftSize, FFTRadix(FFT_RADIX2))
         
-        vDSP_fft_zrip(setup!, &splitComplex, 1, log2fftSize, FFTDirection(FFT_FORWARD))
+        vDSP_fft_zripD(setup!, &splitComplex, 1, log2fftSize, FFTDirection(FFT_FORWARD))
 
-        var scale :Float = 1/2
-        vDSP_vsmul(splitComplex.realp, 1, &scale, splitComplex.realp, 1, vDSP_Length(inputSize/2))
-        vDSP_vsmul(splitComplex.imagp, 1, &scale, splitComplex.imagp, 1, vDSP_Length(inputSize/2))
+        var scale :Double = 1/2
+        vDSP_vsmulD(splitComplex.realp, 1, &scale, splitComplex.realp, 1, vDSP_Length(inputSize/2))
+        vDSP_vsmulD(splitComplex.imagp, 1, &scale, splitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
-        var fftRealValue = splitComplex.realp
-        print(fftRealValue.pointee)
+        let fftRealValue = splitComplex.realp
+        let fftImagValue = splitComplex.imagp
         
-        var fftImagValue = splitComplex.imagp
-        print(fftImagValue.pointee)
+//        let fftOutputReal = UnsafeBufferPointer(start: splitComplex.realp, count: inputSize/2)
+//        let fftOutputImag = UnsafeBufferPointer(start: splitComplex.imagp, count: inputSize/2)
         
-        let fftOutputReal = Array(UnsafeBufferPointer(start: splitComplex.realp, count: inputSize/2))
-        let fftOutputImag = Array(UnsafeBufferPointer(start: splitComplex.imagp, count: inputSize/2))
-        
-        var magnitudes = [Float]()
+        var magnitudes = [Double]()
         
         for index in 0 ..< inputSize {
             if (index < inputSize/2) {
-                let ri = fftRealValue.pointee
-                let ii = fftImagValue.pointee
-                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
-                fftRealValue += 1
-                fftImagValue += 1
+                let ri = fftRealValue.advanced(by: index).pointee
+                let ii = fftImagValue.advanced(by: index).pointee
+                magnitudes.append(20 * log10(sqrt(ri * ri + ii * ii)))
             }else{
-                let ri = fftRealValue.pointee
-                let ii = fftImagValue.pointee
-                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
-                fftRealValue -= 1
-                fftImagValue -= 1
+                let ri = fftRealValue.advanced(by: inputSize - index - 1).pointee
+                let ii = fftImagValue.advanced(by: inputSize - index - 1).pointee
+                magnitudes.append(20 * log10(sqrt(ri * ri + ii * ii)))
             }
         }
         
-        print("magnitudes[0] = \(magnitudes[1])")
-        var ifftInputReal = [Float](repeating: 0.0, count: inputSize/2)
-        var ifftInputImag = [Float](repeating: 0.0, count: inputSize/2)
-        var ifftSplitComplex = DSPSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
+        var ifftInputReal = [Double](repeating: 0.0, count: inputSize/2)
+        var ifftInputImag = [Double](repeating: 0.0, count: inputSize/2)
+        var ifftSplitComplex = DSPDoubleSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
 //        let ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: fftSize)
-        var ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: inputSize)
+        let ifftSplitComplexSrc :UnsafePointer<DSPDoubleComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPDoubleComplex.self, capacity: inputSize)
         
   
 //        vDSP_ctoz(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(fftSize/2))
-        vDSP_ctoz(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(inputSize/2))
+        vDSP_ctozD(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(inputSize/2))
         
-//        var pOfIfftSplitComplex = ifftSplitComplex.realp
-//        pOfIfftSplitComplex += 1
-//        print("ifft_input_real[0] = \(pOfIfftSplitComplex.pointee)")
-//        
-        let ifftSetup = vDSP_create_fftsetup(log2fftSize, FFTRadix(FFT_RADIX2))
-//        
-//        var pointer = ifftSplitComplex.realp
-//        for i in 0 ..< inputSize/2 {
-//            print("\(i):\(pointer.pointee)")
-//            pointer += 1
-//        }
-//        print("cep_real_BeforeFft = \(ifftSplitComplex.realp.pointee)")
+        let ifftSetup = vDSP_create_fftsetupD(log2fftSize, FFTRadix(FFT_RADIX2))
         
-        vDSP_fft_zrip(ifftSetup!, &ifftSplitComplex, 1, log2fftSize, FFTDirection(FFT_INVERSE))
+        vDSP_fft_zripD(ifftSetup!, &ifftSplitComplex, 1, UInt(log2fftSize), Int32(FFTDirection(FFT_INVERSE)))
         
-        print("cep_real_AfterFft = \(ifftSplitComplex.realp.pointee)")
+        vDSP_vsmulD(ifftSplitComplex.realp, 1, &scale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
+        vDSP_vsmulD(ifftSplitComplex.imagp, 1, &scale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
-        var pointer2 = ifftSplitComplex.realp
-        for i in 0 ..< inputSize/2 {
-            print("\(i):\(pointer2.pointee)")
-            pointer2 += 1
-        }
-        
-        vDSP_vsmul(ifftSplitComplex.realp, 1, &scale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
-        vDSP_vsmul(ifftSplitComplex.imagp, 1, &scale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
-        
-        var pointerOfIfftSplitComplex = ifftSplitComplex.realp
-        pointerOfIfftSplitComplex += 3
-        print("cep_real[0] = \(pointerOfIfftSplitComplex.pointee)")
+        var ifftScale :Double = 1/256
+        vDSP_vsmulD(ifftSplitComplex.realp, 1, &ifftScale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
+        vDSP_vsmulD(ifftSplitComplex.imagp, 1, &ifftScale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
         let ifftOutputReal = Array(UnsafeBufferPointer(start: ifftSplitComplex.realp, count: fftSize/2))
         let ifftOutputImag = Array(UnsafeBufferPointer(start: ifftSplitComplex.imagp, count: fftSize/2))
         
-        var cepstrum = [Float]()
+        var cepstrum = [Double]()
         for index in 0 ..< fftSize/2 {
             let ri = ifftOutputReal[index]
             let ii = ifftOutputImag[index]
 //            cepstrum.append(sqrt(ri * ri + ii * ii))
             cepstrum.append(ri)
+            print(ri)
         }
         
-        vDSP_destroy_fftsetup(setup)
-        vDSP_destroy_fftsetup(ifftSetup)
+        vDSP_destroy_fftsetupD(setup)
+        vDSP_destroy_fftsetupD(ifftSetup)
         
         return cepstrum
     }
@@ -264,16 +237,16 @@ class SpectralViewController: UIViewController {
         let size = view.bounds.size
         
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
-        line.move(to: CGPoint(x: 5, y: 5))
+        line.move(to: CGPoint(x: 5, y: 30))
         for i in 0 ..< stationaryPart.count {
             var yPos = stationaryPart[i]
             if (yPos > 200 || yPos.isNaN || yPos.isInfinite) {
-                yPos = 5
+                yPos = 100
             }else {
 //                yPos = yPos
             }
 //            print("\(i): \(yPos)")
-            line.addLine(to : CGPoint(x: 2 * i + 5, y: Int(yPos)))
+            line.addLine(to : CGPoint(x: 2 * i + 5, y: Int(yPos*10)+100))
         }
         
         line.lineWidth = 1.0

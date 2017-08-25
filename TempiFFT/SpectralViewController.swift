@@ -35,8 +35,10 @@ class SpectralViewController: UIViewController {
         imageView.image = UIImage(named: "G_clef.png")
         self.view.addSubview(imageView)
         
+        var recordBufferSize :Int = 0
         let audioInputCallback: TempiAudioInputCallback = { (timeStamp, numberOfFrames, samples) -> Void in
             self.gotSomeAudio(timeStamp: Double(timeStamp), numberOfFrames: Int(numberOfFrames), samples: samples)
+            recordBufferSize = samples.count
         }
         
         audioInput = TempiAudioInput(audioInputCallback: audioInputCallback, sampleRate: 44100, numberOfChannels: 1)
@@ -66,7 +68,8 @@ class SpectralViewController: UIViewController {
             inputBuffer[i] = audioClass.buffer[0][i]
         }
         
-        let stationaryPart = Array(inputBuffer[5000...5511])
+        let cutSize :Int = 1024
+        let stationaryPart = Array(inputBuffer[5000...5000+cutSize-1])
         let cepstrum :[Double] = calculateCepstrum(stationaryPart)
         
         let testDraw = drawLine(cepstrum.map{Float($0)})
@@ -148,8 +151,14 @@ class SpectralViewController: UIViewController {
     }
     
     func calculateCepstrum(_ inBuffer:[Float]) -> [Double] {
-        let samples = inBuffer.map{Double($0)}
+        let doubleInBuffer = inBuffer.map{Double($0)}
+        var samples = doubleInBuffer
         let inputSize :Int = samples.count
+        
+        var window = [Double](repeating: 0.0, count: inputSize)
+        vDSP_hamm_windowD(&window, UInt(inputSize), 0)
+        vDSP_vmulD(doubleInBuffer, 1, window, 1, &samples, 1, UInt(inputSize))
+        
         
         let label = UILabel(frame: CGRect(x: 30, y: 30, width: 200, height: 20))
         label.text = "inputSize:" + String(inputSize)
@@ -209,7 +218,7 @@ class SpectralViewController: UIViewController {
         vDSP_vsmulD(ifftSplitComplex.realp, 1, &scale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
         vDSP_vsmulD(ifftSplitComplex.imagp, 1, &scale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
-        var ifftScale :Double = 1/256
+        var ifftScale :Double = 1/Double(inputSize/2)
         vDSP_vsmulD(ifftSplitComplex.realp, 1, &ifftScale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
         vDSP_vsmulD(ifftSplitComplex.imagp, 1, &ifftScale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
@@ -222,7 +231,7 @@ class SpectralViewController: UIViewController {
             let ii = ifftOutputImag[index]
 //            cepstrum.append(sqrt(ri * ri + ii * ii))
             cepstrum.append(ri)
-            print(ri)
+            print("\(index):\(abs(ri))")
         }
         
         vDSP_destroy_fftsetupD(setup)
@@ -240,13 +249,14 @@ class SpectralViewController: UIViewController {
         line.move(to: CGPoint(x: 5, y: 30))
         for i in 0 ..< stationaryPart.count {
             var yPos = stationaryPart[i]
-            if (yPos > 200 || yPos.isNaN || yPos.isInfinite) {
+            var xPos = i
+            if (i < 100 || yPos.isNaN || yPos.isInfinite) {
                 yPos = 100
             }else {
-//                yPos = yPos
+                yPos = abs(yPos) * 30 + 100
             }
 //            print("\(i): \(yPos)")
-            line.addLine(to : CGPoint(x: 2 * i + 5, y: Int(yPos*10)+100))
+            line.addLine(to : CGPoint(x: xPos + 5, y: Int(yPos)))
         }
         
         line.lineWidth = 1.0

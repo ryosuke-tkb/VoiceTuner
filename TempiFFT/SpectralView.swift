@@ -11,6 +11,7 @@ import UIKit
 class SpectralView: UIView {
 
     var fft: TempiFFT!
+    var cepstrum: [Double]!
     let start = Date()
     
     override func draw(_ rect: CGRect) {
@@ -36,7 +37,7 @@ class SpectralView: UIView {
         // this process add Subview so, subview count is increase every call
         // self.addSubview(noteImageView)
         
-//        self.drawSpectrum(context: context!)
+        self.drawSpectrum(context: context!)
         
         // We're drawing static labels every time through our drawRect() which is a waste.
         // If this were more than a demo we'd take care to only draw them once.
@@ -109,62 +110,62 @@ class SpectralView: UIView {
         context.move(to: CGPoint(x: 5, y: 5))
 
 //        let count:Int = fft.numberOfBands
-        let count = 256
-        let offset :Float = 50
+        let count = self.cepstrum!.count
+        let offset :Float = 200
         
         for i in 0 ..< count {
-            let xPos :Int = i * 1 + 5
-            let cepCoef = fft.getMagnitudes(i)
+            let xPos :Int = i + 5
+            let cepCoef = self.cepstrum![i]
             var yPos :Float
             if (cepCoef.isNaN || cepCoef.isInfinite) {
                 yPos =  offset
             }else {
-                yPos = cepCoef * 5
+                yPos = Float(cepCoef * 30) + offset
             }
             context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
         }
         
         context.setStrokeColor(UIColor.black.cgColor)
         context.strokePath()
-        
-        let drawOffsetY  :Float = 150
-        context.move(to: CGPoint(x:5, y:0))
-        let fftcount = 512
-        
-        for i in 0 ..< fftcount {
-            let xPos :Int = i * 1 + 5
-            let cepCoef = fft.getFftRawOutput(i)
-            var yPos :Float
-            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100) {
-                yPos = drawOffsetY
-            }else {
-                yPos = TempiFFT.toDB(cepCoef) + 32 + drawOffsetY
-            }
-            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
-        }
-        context.setStrokeColor(UIColor.red.cgColor)
-        context.strokePath()
-            
-        let drawCepOffsetY  :Float = 200
-        
-        context.move(to: CGPoint(x:5, y:Int(drawCepOffsetY)))
-        let cepcount = 256
-        let cepstrum = fft.getCepstrum()
-        
-        for i in 0 ..< cepcount {
-            let xPos :Int = i * 1 + 5
-            let cepCoef = cepstrum[i]
-//            print("cepstrum(\(i)): \(cepCoef)")
-            var yPos :Float
-            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100 || cepCoef < -100) {
-                yPos = drawCepOffsetY
-            }else {
-                yPos = cepCoef * 5
-            }
-            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
-        }
-        context.setStrokeColor(UIColor.green.cgColor)
-        context.strokePath()
+//        
+//        let drawOffsetY  :Float = 150
+//        context.move(to: CGPoint(x:5, y:0))
+//        let fftcount = 512
+//        
+//        for i in 0 ..< fftcount {
+//            let xPos :Int = i * 1 + 5
+//            let cepCoef = fft.getFftRawOutput(i)
+//            var yPos :Float
+//            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100) {
+//                yPos = drawOffsetY
+//            }else {
+//                yPos = TempiFFT.toDB(cepCoef) + 32 + drawOffsetY
+//            }
+//            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
+//        }
+//        context.setStrokeColor(UIColor.red.cgColor)
+//        context.strokePath()
+//            
+//        let drawCepOffsetY  :Float = 200
+//        
+//        context.move(to: CGPoint(x:5, y:Int(drawCepOffsetY)))
+//        let cepcount = 256
+//        let cepstrum = fft.getCepstrum()
+//        
+//        for i in 0 ..< cepcount {
+//            let xPos :Int = i * 1 + 5
+//            let cepCoef = cepstrum[i]
+////            print("cepstrum(\(i)): \(cepCoef)")
+//            var yPos :Float
+//            if (cepCoef.isNaN || cepCoef.isInfinite || cepCoef > 100 || cepCoef < -100) {
+//                yPos = drawCepOffsetY
+//            }else {
+//                yPos = cepCoef * 5
+//            }
+//            context.addLine(to: CGPoint(x: xPos, y: Int(yPos)))
+//        }
+//        context.setStrokeColor(UIColor.green.cgColor)
+//        context.strokePath()
         
     
 //        context.setLineWidth(5.0)

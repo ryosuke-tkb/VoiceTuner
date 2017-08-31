@@ -14,6 +14,7 @@ class SpectralViewController: UIViewController {
     
     var audioInput: TempiAudioInput!
     var spectralView: SpectralView!
+    var inData: [Float]!
     
     // called immediately after a screen has been displayed
     override func viewDidLoad() {
@@ -35,10 +36,8 @@ class SpectralViewController: UIViewController {
         imageView.image = UIImage(named: "G_clef.png")
         self.view.addSubview(imageView)
         
-        var recordBufferSize :Int = 0
         let audioInputCallback: TempiAudioInputCallback = { (timeStamp, numberOfFrames, samples) -> Void in
             self.gotSomeAudio(timeStamp: Double(timeStamp), numberOfFrames: Int(numberOfFrames), samples: samples)
-            recordBufferSize = samples.count
         }
         
         audioInput = TempiAudioInput(audioInputCallback: audioInputCallback, sampleRate: 44100, numberOfChannels: 1)
@@ -53,8 +52,8 @@ class SpectralViewController: UIViewController {
 //        self.makeScoreImage(pos_y: 150)
 //        self.makeScoreImage(pos_y: 200)
 //        self.makeScoreImage(pos_y: 250)
-        
-        let audioClass = AudioDataClass(address: "/Users/Ryosuke/Downloads/a.wav")
+      /*
+        let audioClass = AudioDataClass(address: "a.wav")
         audioClass.loadAudioData()
         
         let samplingRate = audioClass.samplingRate!
@@ -76,7 +75,13 @@ class SpectralViewController: UIViewController {
         let drawView = UIImageView(image: testDraw)
 
         self.view.addSubview(drawView)
+        */
     
+        if self.inData != nil {
+            print("hoge")
+            print("ioData.count = \(self.inData!.count)")
+        }
+        
         // make stop button
         let stopButton = UIButton()
         stopButton.setTitle("Stop", for: .normal)
@@ -103,12 +108,24 @@ class SpectralViewController: UIViewController {
         fft.windowType = TempiFFTWindowType.hanning
         fft.fftForward(samples)
         
+        self.inData = samples
+        let cepstrum :[Double] = calculateCepstrum(samples)
+        
+//        let maxIndex = cepstrum.reduce(0, { (a: Double, b: Double) -> Double in max(a,b) })
+        let maxValue :Double? = cepstrum[100...255].max()
+//        let maxIndex :Int? = cepstrum.index(of: maxValue!)
+        let (maxI, maxV) = cepstrum[100...411].enumerated().max(by: {$0.element < $1.element})!
+//        print(maxI+100)
+        let freq = 44100/(maxI+100)
+        print("freq=\(freq)")
+        
         // Interpoloate the FFT data so there's one band per pixel.
         let screenWidth = UIScreen.main.bounds.size.width * UIScreen.main.scale
         fft.calculateLinearBands(minFrequency: 0, maxFrequency: fft.nyquistFrequency, numberOfBands: Int(screenWidth))
 
         tempi_dispatch_main { () -> () in
             self.spectralView.fft = fft
+            self.spectralView.cepstrum = cepstrum
             self.spectralView.setNeedsDisplay()
         }
     }
@@ -160,9 +177,9 @@ class SpectralViewController: UIViewController {
         vDSP_vmulD(doubleInBuffer, 1, window, 1, &samples, 1, UInt(inputSize))
         
         
-        let label = UILabel(frame: CGRect(x: 30, y: 30, width: 200, height: 20))
-        label.text = "inputSize:" + String(inputSize)
-        self.view.addSubview(label)
+//        let label = UILabel(frame: CGRect(x: 30, y: 30, width: 200, height: 20))
+//        label.text = "inputSize:" + String(inputSize)
+//        self.view.addSubview(label)
         
         var reals = [Double](repeating: 0.0, count: inputSize/2)
         var imgs = [Double](repeating: 0.0, count: inputSize/2)
@@ -230,8 +247,8 @@ class SpectralViewController: UIViewController {
             let ri = ifftOutputReal[index]
             let ii = ifftOutputImag[index]
 //            cepstrum.append(sqrt(ri * ri + ii * ii))
-            cepstrum.append(ri)
-            print("\(index):\(abs(ri))")
+            cepstrum.append(sqrt(ri * ri + ii * ii))
+//            print("\(index):\(abs(ri))")
         }
         
         vDSP_destroy_fftsetupD(setup)

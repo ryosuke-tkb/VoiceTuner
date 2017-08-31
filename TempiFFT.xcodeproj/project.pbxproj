@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		773754791F2A1E0A0035C3D3 /* hachibu.png in Resources */ = {isa = PBXBuildFile; fileRef = 773754781F2A1E0A0035C3D3 /* hachibu.png */; };
 		7737547B1F2A2AD80035C3D3 /* G_clef.png in Resources */ = {isa = PBXBuildFile; fileRef = 7737547A1F2A2AD80035C3D3 /* G_clef.png */; };
+		773C874C1F56A5D8002C6799 /* a.wav in Resources */ = {isa = PBXBuildFile; fileRef = 773C874B1F56A5D8002C6799 /* a.wav */; };
+		774160B81F31EAB50008D962 /* AudioDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774160B71F31EAB50008D962 /* AudioDataClass.swift */; };
 		EF7009141C3ED07100E75ECF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7009131C3ED07100E75ECF /* AppDelegate.swift */; };
 		EF7009161C3ED07100E75ECF /* SpectralViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7009151C3ED07100E75ECF /* SpectralViewController.swift */; };
 		EF7009191C3ED07100E75ECF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EF7009171C3ED07100E75ECF /* Main.storyboard */; };
@@ -24,6 +26,8 @@
 /* Begin PBXFileReference section */
 		773754781F2A1E0A0035C3D3 /* hachibu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hachibu.png; sourceTree = "<group>"; };
 		7737547A1F2A2AD80035C3D3 /* G_clef.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = G_clef.png; sourceTree = "<group>"; };
+		773C874B1F56A5D8002C6799 /* a.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = a.wav; sourceTree = "<group>"; };
+		774160B71F31EAB50008D962 /* AudioDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioDataClass.swift; sourceTree = "<group>"; };
 		EF7009101C3ED07100E75ECF /* TempiFFT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TempiFFT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF7009131C3ED07100E75ECF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EF7009151C3ED07100E75ECF /* SpectralViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectralViewController.swift; sourceTree = "<group>"; };
@@ -75,10 +79,12 @@
 				EFAC3F471C45C719002CD63F /* TempiFFT.swift */,
 				EFAC3F451C406DC5002CD63F /* TempiUtilities.swift */,
 				EFAC3F4D1C4D7B76002CD63F /* TempiDebug.swift */,
+				774160B71F31EAB50008D962 /* AudioDataClass.swift */,
 				EF7009171C3ED07100E75ECF /* Main.storyboard */,
 				EF70091A1C3ED07100E75ECF /* Assets.xcassets */,
 				EF70091C1C3ED07100E75ECF /* LaunchScreen.storyboard */,
 				EF70091F1C3ED07100E75ECF /* Info.plist */,
+				773C874B1F56A5D8002C6799 /* a.wav */,
 				773754781F2A1E0A0035C3D3 /* hachibu.png */,
 				7737547A1F2A2AD80035C3D3 /* G_clef.png */,
 			);
@@ -145,6 +151,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				773C874C1F56A5D8002C6799 /* a.wav in Resources */,
 				EF70091E1C3ED07100E75ECF /* LaunchScreen.storyboard in Resources */,
 				EF70091B1C3ED07100E75ECF /* Assets.xcassets in Resources */,
 				773754791F2A1E0A0035C3D3 /* hachibu.png in Resources */,
@@ -161,6 +168,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EF7916BE1C50AA9700658A2C /* SpectralView.swift in Sources */,
+				774160B81F31EAB50008D962 /* AudioDataClass.swift in Sources */,
 				EFAC3F4E1C4D7B76002CD63F /* TempiDebug.swift in Sources */,
 				EF7009161C3ED07100E75ECF /* SpectralViewController.swift in Sources */,
 				EF70092A1C3EDFB900E75ECF /* TempiAudioInput.swift in Sources */,

@@ -98,7 +98,8 @@ class TempiAudioInput: NSObject {
         
         // Move samples from mData into our native [Float] format.
         var monoSamples = [Float]()
-        let ptr = bufferList.mBuffers.mData?.assumingMemoryBound(to: Float.self)
+//        let ptr = bufferList.mBuffers.mData?.assumingMemoryBound(to: Float.self)
+        var ptr = bufferList.mBuffers.mData?.assumingMemoryBound(to: Float.self)
         monoSamples.append(contentsOf: UnsafeBufferPointer(start: ptr, count: Int(inNumberFrames)))
         
         if audioInput.shouldPerformDCOffsetRejection {
@@ -131,8 +132,9 @@ class TempiAudioInput: NSObject {
             
             // This will have an impact on CPU usage. .01 gives 512 samples per frame on iPhone. (Probably .01 * 44100 rounded up.)
             // NB: This is considered a 'hint' and more often than not is just ignored.
-            try audioSession.setPreferredIOBufferDuration(0.01)
-            
+//            try audioSession.setPreferredIOBufferDuration(0.01)
+            try audioSession.setPreferredIOBufferDuration(1024/Double(sampleRate))
+
             audioSession.requestRecordPermission { (granted) -> Void in
                 if !granted {
                     print("*** record permission denied")

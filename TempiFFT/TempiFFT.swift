@@ -145,8 +145,6 @@ import Accelerate
     /// Perform a forward FFT on the provided single-channel audio data. When complete, the instance can be queried for information about the analysis or the magnitudes can be accessed directly.
     /// - Parameter inMonoBuffer: Audio data in mono format
     func fftForward(_ inMonoBuffer:[Float]) {
-        
-        // inMonoBuffer　contains 512 Samples
         // analysisBuffer contains FFT data
         var analysisBuffer = inMonoBuffer
         

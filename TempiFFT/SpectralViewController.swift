@@ -11,10 +11,24 @@ import AVFoundation
 import Accelerate
 
 class SpectralViewController: UIViewController {
-    
     var audioInput: TempiAudioInput!
     var spectralView: SpectralView!
     var inData: [Float]!
+    var pitchDict: [String : Int] = [
+        "C":0,
+        "C#":1,
+        "D":2,
+        "D#":3,
+        "E":4,
+        "F":5,
+        "F#":6,
+        "G":7,
+        "G#":8,
+        "A":9,
+        "A#":10,
+        "B":11
+    ]
+    var pitchArray: [String] = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
     
     // called immediately after a screen has been displayed
     override func viewDidLoad() {
@@ -22,18 +36,20 @@ class SpectralViewController: UIViewController {
 
         spectralView = SpectralView(frame: self.view.bounds)
         spectralView.backgroundColor = UIColor.white
+        spectralView.noteImage = UIImage(named: "zen-onpu.png")
+        spectralView.prepareNoteImage()
         
         self.view.addSubview(spectralView)
         
         // prepare Image View
-        let rect = CGRect(x:0, y:100, width: 100, height: 200)
+        let rect = CGRect(x: 0, y: 40, width: 150, height: 220)
         let imageView = UIImageView(frame: rect)
         
         // set Image display mode
         imageView.contentMode = .scaleAspectFit
         
         // set photo file
-        imageView.image = UIImage(named: "G_clef.png")
+        imageView.image = UIImage(named: "G_clef_resized.png")
         self.view.addSubview(imageView)
         
         let audioInputCallback: TempiAudioInputCallback = { (timeStamp, numberOfFrames, samples) -> Void in
@@ -43,43 +59,11 @@ class SpectralViewController: UIViewController {
         audioInput = TempiAudioInput(audioInputCallback: audioInputCallback, sampleRate: 44100, numberOfChannels: 1)
         audioInput.startRecording()
         
-//         draw 5 line (more simply!!)
-//        let lineImage = self.makeScoreImage(pos_y: 50)
-//        let lineView = UIImageView(image: lineImage)
-//        self.view.addSubview(lineView)
-        
-//        self.makeScoreImage(pos_y: 100)
-//        self.makeScoreImage(pos_y: 150)
-//        self.makeScoreImage(pos_y: 200)
-//        self.makeScoreImage(pos_y: 250)
-      /*
-        let audioClass = AudioDataClass(address: "a.wav")
-        audioClass.loadAudioData()
-        
-        let samplingRate = audioClass.samplingRate!
-        let sampleSize = audioClass.nframe!
-        
-        print("samplingRate: \(samplingRate)")
-        print("sampleSize: \(sampleSize)")
-        
-        var inputBuffer = [Float](repeating: 0.0, count: sampleSize)
-        for i in 0 ..< sampleSize {
-            inputBuffer[i] = audioClass.buffer[0][i]
-        }
-        
-        let cutSize :Int = 1024
-        let stationaryPart = Array(inputBuffer[5000...5000+cutSize-1])
-        let cepstrum :[Double] = calculateCepstrum(stationaryPart)
-        
-        let testDraw = drawLine(cepstrum.map{Float($0)})
-        let drawView = UIImageView(image: testDraw)
-
-        self.view.addSubview(drawView)
-        */
-    
-        if self.inData != nil {
-            print("hoge")
-            print("ioData.count = \(self.inData!.count)")
+        // draw 5 lines
+        for i in 1...5 {
+            let lineImage = self.makeScoreImage(pos_y: CGFloat(60 + 30 * i))
+            let lineView = UIImageView(image: lineImage)
+            self.view.addSubview(lineView)
         }
         
         // make stop button
@@ -89,7 +73,7 @@ class SpectralViewController: UIViewController {
         stopButton.backgroundColor = UIColor.black
         stopButton.addTarget(self, action: #selector(stopButtonEvent(sender:)), for: .touchUpInside)
         stopButton.sizeToFit()
-        stopButton.frame = CGRect(x: self.view.bounds.midX + 80, y: self.view.bounds.midY, width: 80, height: 40)
+        stopButton.frame = CGRect(x: self.view.bounds.midX + 80, y: self.view.bounds.maxY - 45, width: 80, height: 40)
         self.view.addSubview(stopButton)
         
         // make start button
@@ -99,8 +83,14 @@ class SpectralViewController: UIViewController {
         startButton.backgroundColor = UIColor.black
         startButton.addTarget(self, action: #selector(startButtonEvent(sender:)), for: .touchUpInside)
         startButton.sizeToFit()
-        startButton.frame = CGRect(x: self.view.bounds.midX - 80, y: self.view.bounds.midY, width: 80, height: 40)
+        startButton.frame = CGRect(x: self.view.bounds.midX - 80, y: self.view.bounds.maxY - 45, width: 80, height: 40)
         self.view.addSubview(startButton)
+        
+        let pitchInfoLabel: UILabel = UILabel(frame: CGRect(x: 10, y: 10, width: 200, height: 20))
+        pitchInfoLabel.backgroundColor = UIColor.orange
+        pitchInfoLabel.text = "no info"
+        pitchInfoLabel.textColor = UIColor.white
+        self.view.addSubview(pitchInfoLabel)
     }
 
     func gotSomeAudio(timeStamp: Double, numberOfFrames: Int, samples: [Float]) {
@@ -111,13 +101,14 @@ class SpectralViewController: UIViewController {
         self.inData = samples
         let cepstrum :[Double] = calculateCepstrum(samples)
         
-//        let maxIndex = cepstrum.reduce(0, { (a: Double, b: Double) -> Double in max(a,b) })
-        let maxValue :Double? = cepstrum[100...255].max()
-//        let maxIndex :Int? = cepstrum.index(of: maxValue!)
-        let (maxI, maxV) = cepstrum[100...411].enumerated().max(by: {$0.element < $1.element})!
-//        print(maxI+100)
+        let (maxI, _) = cepstrum[100...411].enumerated().max(by: {$0.element < $1.element})!
         let freq = 44100/(maxI+100)
-        print("freq=\(freq)")
+        let nn :Int = 69 + Int(round(12 * log2f(Float(freq)/440)))
+        let octave :Int = nn % 12
+        print("freq=\(freq)  nn = \(nn)  octave = \(pitchArray[octave])")
+        
+        self.spectralView.guessFreq = Int(freq)
+        self.spectralView.midiNN = nn
         
         // Interpoloate the FFT data so there's one band per pixel.
         let screenWidth = UIScreen.main.bounds.size.width * UIScreen.main.scale
@@ -153,12 +144,12 @@ class SpectralViewController: UIViewController {
         
         let line = UIBezierPath()
         line.move(to: CGPoint(x: 0, y: pos_y))
-        line.addLine(to: CGPoint(x: 100, y: pos_y))
+        line.addLine(to: CGPoint(x: size.width, y: pos_y))
         line.close()
         
         UIColor.black.setStroke()
         UIColor.black.setFill()
-        line.lineWidth = 5.0
+        line.lineWidth = 1.0
         line.stroke()
     
         let image = UIGraphicsGetImageFromCurrentImageContext()
@@ -168,18 +159,15 @@ class SpectralViewController: UIViewController {
     }
     
     func calculateCepstrum(_ inBuffer:[Float]) -> [Double] {
+        // cast float to double
         let doubleInBuffer = inBuffer.map{Double($0)}
         var samples = doubleInBuffer
         let inputSize :Int = samples.count
         
+        // multiple hamming window
         var window = [Double](repeating: 0.0, count: inputSize)
         vDSP_hamm_windowD(&window, UInt(inputSize), 0)
         vDSP_vmulD(doubleInBuffer, 1, window, 1, &samples, 1, UInt(inputSize))
-        
-        
-//        let label = UILabel(frame: CGRect(x: 30, y: 30, width: 200, height: 20))
-//        label.text = "inputSize:" + String(inputSize)
-//        self.view.addSubview(label)
         
         var reals = [Double](repeating: 0.0, count: inputSize/2)
         var imgs = [Double](repeating: 0.0, count: inputSize/2)
@@ -201,9 +189,6 @@ class SpectralViewController: UIViewController {
         let fftRealValue = splitComplex.realp
         let fftImagValue = splitComplex.imagp
         
-//        let fftOutputReal = UnsafeBufferPointer(start: splitComplex.realp, count: inputSize/2)
-//        let fftOutputImag = UnsafeBufferPointer(start: splitComplex.imagp, count: inputSize/2)
-        
         var magnitudes = [Double]()
         
         for index in 0 ..< inputSize {
@@ -221,21 +206,15 @@ class SpectralViewController: UIViewController {
         var ifftInputReal = [Double](repeating: 0.0, count: inputSize/2)
         var ifftInputImag = [Double](repeating: 0.0, count: inputSize/2)
         var ifftSplitComplex = DSPDoubleSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
-//        let ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: fftSize)
         let ifftSplitComplexSrc :UnsafePointer<DSPDoubleComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPDoubleComplex.self, capacity: inputSize)
         
-  
-//        vDSP_ctoz(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(fftSize/2))
         vDSP_ctozD(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(inputSize/2))
         
         let ifftSetup = vDSP_create_fftsetupD(log2fftSize, FFTRadix(FFT_RADIX2))
         
         vDSP_fft_zripD(ifftSetup!, &ifftSplitComplex, 1, UInt(log2fftSize), Int32(FFTDirection(FFT_INVERSE)))
         
-        vDSP_vsmulD(ifftSplitComplex.realp, 1, &scale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
-        vDSP_vsmulD(ifftSplitComplex.imagp, 1, &scale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
-        
-        var ifftScale :Double = 1/Double(inputSize/2)
+        var ifftScale :Double = 1/Double(inputSize)
         vDSP_vsmulD(ifftSplitComplex.realp, 1, &ifftScale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
         vDSP_vsmulD(ifftSplitComplex.imagp, 1, &ifftScale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
@@ -246,9 +225,7 @@ class SpectralViewController: UIViewController {
         for index in 0 ..< fftSize/2 {
             let ri = ifftOutputReal[index]
             let ii = ifftOutputImag[index]
-//            cepstrum.append(sqrt(ri * ri + ii * ii))
             cepstrum.append(sqrt(ri * ri + ii * ii))
-//            print("\(index):\(abs(ri))")
         }
         
         vDSP_destroy_fftsetupD(setup)
@@ -266,7 +243,7 @@ class SpectralViewController: UIViewController {
         line.move(to: CGPoint(x: 5, y: 30))
         for i in 0 ..< stationaryPart.count {
             var yPos = stationaryPart[i]
-            var xPos = i
+            let xPos = i
             if (i < 100 || yPos.isNaN || yPos.isInfinite) {
                 yPos = 100
             }else {

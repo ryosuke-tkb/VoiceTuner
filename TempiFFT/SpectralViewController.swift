@@ -14,21 +14,6 @@ class SpectralViewController: UIViewController {
     var audioInput: TempiAudioInput!
     var spectralView: SpectralView!
     var inData: [Float]!
-    var pitchDict: [String : Int] = [
-        "C":0,
-        "C#":1,
-        "D":2,
-        "D#":3,
-        "E":4,
-        "F":5,
-        "F#":6,
-        "G":7,
-        "G#":8,
-        "A":9,
-        "A#":10,
-        "B":11
-    ]
-    var pitchArray: [String] = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
     
     // called immediately after a screen has been displayed
     override func viewDidLoad() {
@@ -86,11 +71,14 @@ class SpectralViewController: UIViewController {
         startButton.frame = CGRect(x: self.view.bounds.midX - 80, y: self.view.bounds.maxY - 45, width: 80, height: 40)
         self.view.addSubview(startButton)
         
-        let pitchInfoLabel: UILabel = UILabel(frame: CGRect(x: 10, y: 10, width: 200, height: 20))
-        pitchInfoLabel.backgroundColor = UIColor.orange
-        pitchInfoLabel.text = "no info"
-        pitchInfoLabel.textColor = UIColor.white
-        self.view.addSubview(pitchInfoLabel)
+        let debugButton = UIButton()
+        debugButton.setTitle("debug", for: .normal)
+        debugButton.setTitleColor(UIColor.yellow, for: .normal)
+        debugButton.backgroundColor = UIColor.black
+        debugButton.addTarget(self, action: #selector(switchDebugMode(sender:)), for: .touchUpInside)
+        debugButton.sizeToFit()
+        debugButton.frame = CGRect(x: 450, y: 20, width: 80, height: 20)
+        self.view.addSubview(debugButton)
     }
 
     func gotSomeAudio(timeStamp: Double, numberOfFrames: Int, samples: [Float]) {
@@ -101,22 +89,25 @@ class SpectralViewController: UIViewController {
         self.inData = samples
         let cepstrum :[Double] = calculateCepstrum(samples)
         
+        // get max value's index
         let (maxI, _) = cepstrum[100...411].enumerated().max(by: {$0.element < $1.element})!
-        let freq = 44100/(maxI+100)
-        let nn :Int = 69 + Int(round(12 * log2f(Float(freq)/440)))
-        let octave :Int = nn % 12
-        print("freq=\(freq)  nn = \(nn)  octave = \(pitchArray[octave])")
         
-        self.spectralView.guessFreq = Int(freq)
-        self.spectralView.midiNN = nn
+        // calculate frequency from max value's index
+        let freq = 44100/(maxI+100)
+        
+        // convert frequency to MIDI note number
+        let nn :Int = 69 + Int(round(12 * log2f(Float(freq)/440)))
         
         // Interpoloate the FFT data so there's one band per pixel.
         let screenWidth = UIScreen.main.bounds.size.width * UIScreen.main.scale
         fft.calculateLinearBands(minFrequency: 0, maxFrequency: fft.nyquistFrequency, numberOfBands: Int(screenWidth))
 
+        // conduct in main queue
         tempi_dispatch_main { () -> () in
             self.spectralView.fft = fft
             self.spectralView.cepstrum = cepstrum
+            self.spectralView.guessedFreq = Int(freq)
+            self.spectralView.midiNN = nn
             self.spectralView.setNeedsDisplay()
         }
     }
@@ -132,6 +123,17 @@ class SpectralViewController: UIViewController {
     func startButtonEvent(sender: UIButton) {
         print("start button pushed")
         audioInput.startRecording()
+    }
+    
+    func switchDebugMode(sender: UIButton) {
+        if self.spectralView.isDebugMode {
+            self.spectralView.switchOffDebugMode()
+            if let infoView = self.spectralView.viewWithTag(100) {
+                infoView.removeFromSuperview()
+            }
+        }else {
+            self.spectralView.switchOnDebugMode()
+        }
     }
     
     // function name isn't match. drawLine is more proper

@@ -14,11 +14,17 @@ class SpectralViewController: UIViewController {
     var audioInput: TempiAudioInput!
     var spectralView: SpectralView!
     var inData: [Float]!
+    var selectedTonality: String = ""
     
     // called immediately after a screen has been displayed
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        if appDelegate.message != nil {
+            self.selectedTonality = appDelegate.message!
+        }
+        
         spectralView = SpectralView(frame: self.view.bounds)
         spectralView.backgroundColor = UIColor.white
         spectralView.noteImage = UIImage(named: "zen-onpu.png")
@@ -26,6 +32,8 @@ class SpectralViewController: UIViewController {
         
         self.view.addSubview(spectralView)
         
+        print(self.selectedTonality)
+                
         // prepare Image View
         let rect = CGRect(x: 0, y: 40, width: 150, height: 220)
         let imageView = UIImageView(frame: rect)
@@ -71,6 +79,7 @@ class SpectralViewController: UIViewController {
         startButton.frame = CGRect(x: self.view.bounds.midX - 80, y: self.view.bounds.maxY - 45, width: 80, height: 40)
         self.view.addSubview(startButton)
         
+        // make debug mode button
         let debugButton = UIButton()
         debugButton.setTitle("debug", for: .normal)
         debugButton.setTitleColor(UIColor.yellow, for: .normal)
@@ -79,6 +88,16 @@ class SpectralViewController: UIViewController {
         debugButton.sizeToFit()
         debugButton.frame = CGRect(x: 450, y: 20, width: 80, height: 20)
         self.view.addSubview(debugButton)
+        
+        // make setting mode button.
+        let settingButton: UIButton = UIButton(frame: CGRect(x: 0,y: 0, width: 120, height: 50))
+        settingButton.backgroundColor = UIColor.red
+        settingButton.layer.masksToBounds = true
+        settingButton.setTitle("back", for: .normal)
+        settingButton.layer.cornerRadius = 20.0
+        settingButton.layer.position = CGPoint(x: self.view.bounds.width/2 , y:self.view.bounds.height-50)
+        settingButton.addTarget(self, action: #selector(onClickMyButton(sender:)), for: .touchUpInside)
+        self.view.addSubview(settingButton)
     }
 
     func gotSomeAudio(timeStamp: Double, numberOfFrames: Int, samples: [Float]) {
@@ -134,6 +153,21 @@ class SpectralViewController: UIViewController {
         }else {
             self.spectralView.switchOnDebugMode()
         }
+    }
+    
+    /*
+     ボタンイベント.
+     */
+    internal func onClickMyButton(sender: UIButton){
+        
+        // 遷移するViewを定義.
+        let myViewController: UIViewController = SettingViewController()
+        
+        // アニメーションを設定.
+        myViewController.modalTransitionStyle = UIModalTransitionStyle.flipHorizontal
+        
+        // Viewの移動.
+        self.present(myViewController, animated: true, completion: nil)
     }
     
     // function name isn't match. drawLine is more proper

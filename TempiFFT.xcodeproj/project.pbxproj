@@ -7,11 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		771B179B1F6918C900F3B84B /* F_clef_resized.png in Resources */ = {isa = PBXBuildFile; fileRef = 771B179A1F6918C900F3B84B /* F_clef_resized.png */; };
+		771B179D1F6923A500F3B84B /* setting.png in Resources */ = {isa = PBXBuildFile; fileRef = 771B179C1F6923A500F3B84B /* setting.png */; };
 		771D66531F59434600924BC4 /* G_clef_resized.png in Resources */ = {isa = PBXBuildFile; fileRef = 771D66521F59434600924BC4 /* G_clef_resized.png */; };
 		771D66551F5944CF00924BC4 /* zen-onpu.png in Resources */ = {isa = PBXBuildFile; fileRef = 771D66541F5944CF00924BC4 /* zen-onpu.png */; };
 		771D66571F59743F00924BC4 /* sharp.png in Resources */ = {isa = PBXBuildFile; fileRef = 771D66561F59743F00924BC4 /* sharp.png */; };
 		773754791F2A1E0A0035C3D3 /* hachibu.png in Resources */ = {isa = PBXBuildFile; fileRef = 773754781F2A1E0A0035C3D3 /* hachibu.png */; };
-		7737547B1F2A2AD80035C3D3 /* G_clef.png in Resources */ = {isa = PBXBuildFile; fileRef = 7737547A1F2A2AD80035C3D3 /* G_clef.png */; };
 		77C908B81F6294C300B26EAC /* SettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C908B71F6294C300B26EAC /* SettingViewController.swift */; };
 		EF7009141C3ED07100E75ECF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7009131C3ED07100E75ECF /* AppDelegate.swift */; };
 		EF7009161C3ED07100E75ECF /* SpectralViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7009151C3ED07100E75ECF /* SpectralViewController.swift */; };
@@ -26,11 +27,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		771B179A1F6918C900F3B84B /* F_clef_resized.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = F_clef_resized.png; sourceTree = "<group>"; };
+		771B179C1F6923A500F3B84B /* setting.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = setting.png; sourceTree = "<group>"; };
 		771D66521F59434600924BC4 /* G_clef_resized.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = G_clef_resized.png; sourceTree = "<group>"; };
 		771D66541F5944CF00924BC4 /* zen-onpu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zen-onpu.png"; sourceTree = "<group>"; };
 		771D66561F59743F00924BC4 /* sharp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sharp.png; sourceTree = "<group>"; };
 		773754781F2A1E0A0035C3D3 /* hachibu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hachibu.png; sourceTree = "<group>"; };
-		7737547A1F2A2AD80035C3D3 /* G_clef.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = G_clef.png; sourceTree = "<group>"; };
 		77C908B71F6294C300B26EAC /* SettingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingViewController.swift; sourceTree = "<group>"; };
 		EF7009101C3ED07100E75ECF /* TempiFFT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TempiFFT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF7009131C3ED07100E75ECF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -79,8 +81,8 @@
 				EF7009131C3ED07100E75ECF /* AppDelegate.swift */,
 				77C908B71F6294C300B26EAC /* SettingViewController.swift */,
 				EF7009151C3ED07100E75ECF /* SpectralViewController.swift */,
-				EF7009291C3EDFB900E75ECF /* TempiAudioInput.swift */,
 				EF7916BD1C50AA9700658A2C /* SpectralView.swift */,
+				EF7009291C3EDFB900E75ECF /* TempiAudioInput.swift */,
 				EFAC3F471C45C719002CD63F /* TempiFFT.swift */,
 				EFAC3F451C406DC5002CD63F /* TempiUtilities.swift */,
 				EFAC3F4D1C4D7B76002CD63F /* TempiDebug.swift */,
@@ -90,7 +92,8 @@
 				EF70091F1C3ED07100E75ECF /* Info.plist */,
 				773754781F2A1E0A0035C3D3 /* hachibu.png */,
 				771D66521F59434600924BC4 /* G_clef_resized.png */,
-				7737547A1F2A2AD80035C3D3 /* G_clef.png */,
+				771B179A1F6918C900F3B84B /* F_clef_resized.png */,
+				771B179C1F6923A500F3B84B /* setting.png */,
 				771D66541F5944CF00924BC4 /* zen-onpu.png */,
 				771D66561F59743F00924BC4 /* sharp.png */,
 			);
@@ -158,13 +161,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				771D66571F59743F00924BC4 /* sharp.png in Resources */,
+				771B179B1F6918C900F3B84B /* F_clef_resized.png in Resources */,
 				EF70091E1C3ED07100E75ECF /* LaunchScreen.storyboard in Resources */,
 				EF70091B1C3ED07100E75ECF /* Assets.xcassets in Resources */,
 				771D66551F5944CF00924BC4 /* zen-onpu.png in Resources */,
+				771B179D1F6923A500F3B84B /* setting.png in Resources */,
 				773754791F2A1E0A0035C3D3 /* hachibu.png in Resources */,
 				EF7009191C3ED07100E75ECF /* Main.storyboard in Resources */,
 				771D66531F59434600924BC4 /* G_clef_resized.png in Resources */,
-				7737547B1F2A2AD80035C3D3 /* G_clef.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

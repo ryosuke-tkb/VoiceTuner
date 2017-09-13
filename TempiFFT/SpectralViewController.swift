@@ -14,36 +14,38 @@ class SpectralViewController: UIViewController {
     var audioInput: TempiAudioInput!
     var spectralView: SpectralView!
     var inData: [Float]!
-    var selectedTonality: String = ""
     
     // called immediately after a screen has been displayed
     override func viewDidLoad() {
         super.viewDidLoad()
 
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        if appDelegate.message != nil {
-            self.selectedTonality = appDelegate.message!
-        }
         
         spectralView = SpectralView(frame: self.view.bounds)
         spectralView.backgroundColor = UIColor.white
         spectralView.noteImage = UIImage(named: "zen-onpu.png")
         spectralView.prepareNoteImage()
-        
         self.view.addSubview(spectralView)
         
-        print(self.selectedTonality)
-                
         // prepare Image View
-        let rect = CGRect(x: 0, y: 40, width: 150, height: 220)
-        let imageView = UIImageView(frame: rect)
-        
-        // set Image display mode
-        imageView.contentMode = .scaleAspectFit
+        let imageView = UIImageView()
         
         // set photo file
-        imageView.image = UIImage(named: "G_clef_resized.png")
+        if appDelegate.clef == nil {
+            imageView.image = UIImage(named: "G_clef_resized.png")
+        } else if appDelegate.clef == "Bas" {
+            imageView.image = UIImage(named: "F_clef_resized.png")
+        } else {
+            imageView.image = UIImage(named: "G_clef_resized.png")
+        }
+        imageView.translatesAutoresizingMaskIntoConstraints = false
         self.view.addSubview(imageView)
+        
+        // this part is Auto Laytout by NSLayoutAnchor
+        imageView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        imageView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
+        imageView.heightAnchor.constraint(equalToConstant: imageView.image!.size.height * 0.5).isActive = true
+        imageView.widthAnchor.constraint(equalToConstant: imageView.image!.size.width * 0.5).isActive = true
         
         let audioInputCallback: TempiAudioInputCallback = { (timeStamp, numberOfFrames, samples) -> Void in
             self.gotSomeAudio(timeStamp: Double(timeStamp), numberOfFrames: Int(numberOfFrames), samples: samples)
@@ -53,8 +55,8 @@ class SpectralViewController: UIViewController {
         audioInput.startRecording()
         
         // draw 5 lines
-        for i in 1...5 {
-            let lineImage = self.makeScoreImage(pos_y: CGFloat(60 + 30 * i))
+        for i in -2...2 {
+            let lineImage = self.makeScoreImage(pos_y: self.view.bounds.height * 0.5 + imageView.image!.size.height * 1/16 * CGFloat(i))
             let lineView = UIImageView(image: lineImage)
             self.view.addSubview(lineView)
         }
@@ -90,14 +92,17 @@ class SpectralViewController: UIViewController {
         self.view.addSubview(debugButton)
         
         // make setting mode button.
-        let settingButton: UIButton = UIButton(frame: CGRect(x: 0,y: 0, width: 120, height: 50))
-        settingButton.backgroundColor = UIColor.red
+        let settingButton: UIButton = UIButton()
         settingButton.layer.masksToBounds = true
-        settingButton.setTitle("back", for: .normal)
-        settingButton.layer.cornerRadius = 20.0
-        settingButton.layer.position = CGPoint(x: self.view.bounds.width/2 , y:self.view.bounds.height-50)
+        settingButton.translatesAutoresizingMaskIntoConstraints = false
         settingButton.addTarget(self, action: #selector(onClickMyButton(sender:)), for: .touchUpInside)
+        settingButton.setImage(UIImage(named: "setting.png"), for: UIControlState.normal)
         self.view.addSubview(settingButton)
+        
+        settingButton.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 15.0).isActive = true
+        settingButton.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 15.0).isActive = true
+        settingButton.widthAnchor.constraint(equalToConstant: 40).isActive = true
+        settingButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
     }
 
     func gotSomeAudio(timeStamp: Double, numberOfFrames: Int, samples: [Float]) {
@@ -127,6 +132,8 @@ class SpectralViewController: UIViewController {
             self.spectralView.cepstrum = cepstrum
             self.spectralView.guessedFreq = Int(freq)
             self.spectralView.midiNN = nn
+            self.spectralView.midiNNhistory.removeFirst()
+            self.spectralView.midiNNhistory.append(nn)
             self.spectralView.setNeedsDisplay()
         }
     }
@@ -155,26 +162,20 @@ class SpectralViewController: UIViewController {
         }
     }
     
-    /*
-     ボタンイベント.
-     */
+
     internal func onClickMyButton(sender: UIButton){
-        
-        // 遷移するViewを定義.
+        // define transition destination view
         let myViewController: UIViewController = SettingViewController()
         
-        // アニメーションを設定.
+        // set animation mode
         myViewController.modalTransitionStyle = UIModalTransitionStyle.flipHorizontal
         
-        // Viewの移動.
+        // move to defined view
         self.present(myViewController, animated: true, completion: nil)
     }
     
     // function name isn't match. drawLine is more proper
    func makeScoreImage(pos_y: CGFloat) -> UIImage {
-//        let viewWidth = self.view.bounds.size.width
-//        let viewHeight = self.view.bounds.size.height
-        
         let size = view.bounds.size
         UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
         
@@ -185,7 +186,7 @@ class SpectralViewController: UIViewController {
         
         UIColor.black.setStroke()
         UIColor.black.setFill()
-        line.lineWidth = 1.0
+        line.lineWidth = 2.0
         line.stroke()
     
         let image = UIGraphicsGetImageFromCurrentImageContext()

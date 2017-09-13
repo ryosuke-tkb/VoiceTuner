@@ -13,9 +13,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     var message: String?
+    var clef: String?
 
     // called when application start
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey : Any]? = nil) -> Bool {
+        // switch off sleep mode
+        UIApplication.shared.isIdleTimerDisabled = true
+        
         return true
     }
     

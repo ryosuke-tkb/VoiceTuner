@@ -11,7 +11,8 @@
 		771B179D1F6923A500F3B84B /* setting.png in Resources */ = {isa = PBXBuildFile; fileRef = 771B179C1F6923A500F3B84B /* setting.png */; };
 		771D66531F59434600924BC4 /* G_clef_resized.png in Resources */ = {isa = PBXBuildFile; fileRef = 771D66521F59434600924BC4 /* G_clef_resized.png */; };
 		771D66551F5944CF00924BC4 /* zen-onpu.png in Resources */ = {isa = PBXBuildFile; fileRef = 771D66541F5944CF00924BC4 /* zen-onpu.png */; };
-		771D66571F59743F00924BC4 /* sharp.png in Resources */ = {isa = PBXBuildFile; fileRef = 771D66561F59743F00924BC4 /* sharp.png */; };
+		772BB8841F6A7BB000AF26E3 /* sharp.png in Resources */ = {isa = PBXBuildFile; fileRef = 772BB8831F6A7BB000AF26E3 /* sharp.png */; };
+		772BB8861F6A7BB600AF26E3 /* flat.png in Resources */ = {isa = PBXBuildFile; fileRef = 772BB8851F6A7BB600AF26E3 /* flat.png */; };
 		773754791F2A1E0A0035C3D3 /* hachibu.png in Resources */ = {isa = PBXBuildFile; fileRef = 773754781F2A1E0A0035C3D3 /* hachibu.png */; };
 		77C908B81F6294C300B26EAC /* SettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77C908B71F6294C300B26EAC /* SettingViewController.swift */; };
 		EF7009141C3ED07100E75ECF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7009131C3ED07100E75ECF /* AppDelegate.swift */; };
@@ -31,7 +32,8 @@
 		771B179C1F6923A500F3B84B /* setting.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = setting.png; sourceTree = "<group>"; };
 		771D66521F59434600924BC4 /* G_clef_resized.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = G_clef_resized.png; sourceTree = "<group>"; };
 		771D66541F5944CF00924BC4 /* zen-onpu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "zen-onpu.png"; sourceTree = "<group>"; };
-		771D66561F59743F00924BC4 /* sharp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sharp.png; sourceTree = "<group>"; };
+		772BB8831F6A7BB000AF26E3 /* sharp.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sharp.png; sourceTree = "<group>"; };
+		772BB8851F6A7BB600AF26E3 /* flat.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = flat.png; sourceTree = "<group>"; };
 		773754781F2A1E0A0035C3D3 /* hachibu.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hachibu.png; sourceTree = "<group>"; };
 		77C908B71F6294C300B26EAC /* SettingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingViewController.swift; sourceTree = "<group>"; };
 		EF7009101C3ED07100E75ECF /* TempiFFT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TempiFFT.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -94,8 +96,9 @@
 				771D66521F59434600924BC4 /* G_clef_resized.png */,
 				771B179A1F6918C900F3B84B /* F_clef_resized.png */,
 				771B179C1F6923A500F3B84B /* setting.png */,
+				772BB8831F6A7BB000AF26E3 /* sharp.png */,
+				772BB8851F6A7BB600AF26E3 /* flat.png */,
 				771D66541F5944CF00924BC4 /* zen-onpu.png */,
-				771D66561F59743F00924BC4 /* sharp.png */,
 			);
 			path = TempiFFT;
 			sourceTree = "<group>";
@@ -160,12 +163,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				771D66571F59743F00924BC4 /* sharp.png in Resources */,
 				771B179B1F6918C900F3B84B /* F_clef_resized.png in Resources */,
+				772BB8841F6A7BB000AF26E3 /* sharp.png in Resources */,
 				EF70091E1C3ED07100E75ECF /* LaunchScreen.storyboard in Resources */,
 				EF70091B1C3ED07100E75ECF /* Assets.xcassets in Resources */,
 				771D66551F5944CF00924BC4 /* zen-onpu.png in Resources */,
 				771B179D1F6923A500F3B84B /* setting.png in Resources */,
+				772BB8861F6A7BB600AF26E3 /* flat.png in Resources */,
 				773754791F2A1E0A0035C3D3 /* hachibu.png in Resources */,
 				EF7009191C3ED07100E75ECF /* Main.storyboard in Resources */,
 				771D66531F59434600924BC4 /* G_clef_resized.png in Resources */,

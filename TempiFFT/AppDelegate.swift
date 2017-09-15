@@ -14,6 +14,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     var message: String?
     var clef: String?
+    var tonality: String? = "sharp"
+    var NumOfAccidental: Int = 0
 
     // called when application start
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey : Any]? = nil) -> Bool {

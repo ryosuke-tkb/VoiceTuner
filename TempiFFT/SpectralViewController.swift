@@ -44,8 +44,8 @@ class SpectralViewController: UIViewController {
         // this part is Auto Laytout by NSLayoutAnchor
         imageView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
         imageView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        imageView.heightAnchor.constraint(equalToConstant: imageView.image!.size.height * 0.5).isActive = true
-        imageView.widthAnchor.constraint(equalToConstant: imageView.image!.size.width * 0.5).isActive = true
+        imageView.heightAnchor.constraint(equalTo: self.view.heightAnchor, multiplier: 0.5).isActive = true
+        imageView.widthAnchor.constraint(equalTo: self.view.heightAnchor, multiplier: 0.5 * imageView.image!.size.width / imageView.image!.size.height).isActive = true
         
         let audioInputCallback: TempiAudioInputCallback = { (timeStamp, numberOfFrames, samples) -> Void in
             self.gotSomeAudio(timeStamp: Double(timeStamp), numberOfFrames: Int(numberOfFrames), samples: samples)
@@ -56,9 +56,46 @@ class SpectralViewController: UIViewController {
         
         // draw 5 lines
         for i in -2...2 {
-            let lineImage = self.makeScoreImage(pos_y: self.view.bounds.height * 0.5 + imageView.image!.size.height * 1/16 * CGFloat(i))
+            let lineImage = self.makeScoreImage(pos_y: self.view.bounds.height * 0.5 + self.view.bounds.height * 1/16 * CGFloat(i))
             let lineView = UIImageView(image: lineImage)
             self.view.addSubview(lineView)
+        }
+        
+        if appDelegate.NumOfAccidental != 0 {
+            if let tmpView = self.view.viewWithTag(2000) {
+                tmpView.removeFromSuperview()
+            }
+            let tonalityView = UIView()
+            tonalityView.translatesAutoresizingMaskIntoConstraints = false
+            tonalityView.tag = 2000
+            self.view.addSubview(tonalityView)
+            
+            tonalityView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+            tonalityView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+            tonalityView.heightAnchor.constraint(equalTo: self.view.heightAnchor).isActive = true
+            tonalityView.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
+            
+            if appDelegate.tonality == "sharp" {
+                let deltaCoef: [CGFloat] = [-4,-1,-5,-2,1,-3,0]
+                for i in 0 ..< appDelegate.NumOfAccidental {
+                    let imageView = UIImageView()
+                    imageView.image = UIImage(named: "sharp.png")
+                    imageView.translatesAutoresizingMaskIntoConstraints = false
+                    tonalityView.addSubview(imageView)
+                    
+                    imageView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor, constant: self.view.bounds.height * 1/32 * deltaCoef[i]).isActive = true
+                    imageView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: CGFloat(100 + 10 * i)).isActive = true
+                    imageView.heightAnchor.constraint(equalToConstant: self.view.bounds.height * 1/16 * 1.5).isActive = true
+                    imageView.widthAnchor.constraint(equalToConstant: self.view.bounds.height * 1/16 * 1.5 * imageView.image!.size.width / imageView.image!.size.height).isActive = true
+                }
+            }else if appDelegate.tonality == "flat" {
+                let deltaCoef: [CGFloat] = [0,-3,1,-2,2,-1,3]
+                
+            }
+        }else {
+            if let tmpView = self.view.viewWithTag(2000) {
+                tmpView.removeFromSuperview()
+            }
         }
         
         // make stop button
@@ -162,7 +199,6 @@ class SpectralViewController: UIViewController {
         }
     }
     
-
     internal func onClickMyButton(sender: UIButton){
         // define transition destination view
         let myViewController: UIViewController = SettingViewController()
@@ -286,7 +322,6 @@ class SpectralViewController: UIViewController {
             }else {
                 yPos = abs(yPos) * 30 + 100
             }
-//            print("\(i): \(yPos)")
             line.addLine(to : CGPoint(x: xPos + 5, y: Int(yPos)))
         }
         

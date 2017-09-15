@@ -11,7 +11,7 @@ import UIKit
 
 class SettingViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
     var appDelegate = UIApplication.shared.delegate as! AppDelegate
-    let part = ["Sop", "Alt", "Ten", "Bas"]
+    let compos = [["Sop", "Alt", "Ten", "Bas"],["sharp","flat"],["0","1","2","3","4","5","6","7"]]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,44 +49,54 @@ class SettingViewController: UIViewController, UIPickerViewDelegate, UIPickerVie
         picker.heightAnchor.constraint(equalToConstant: 50).isActive = true
     }
     
+    // return component size
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
+        return compos.count
     }
     
+    // return row size of each component
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return part.count
+        let compo = compos[component]
+        return compo.count
     }
     
+    
+    // return width of each component
+    func pickerView(_ pickerView: UIPickerView, widthForComponent component: Int) -> CGFloat {
+        if component == 0 {
+            return 50
+        }else if component == 1 {
+            return 80
+        }else {
+            return 30
+        }
+    }
+    
+    // return selected item
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        return part[row]
+        let item = compos[component][row]
+        return item
     }
     
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        appDelegate.message = part[row]
-        appDelegate.clef = part[row]
-        print(part[row])
+        appDelegate.message = compos[component][row]
+        appDelegate.clef = compos[component][row]
+        let row1 = pickerView.selectedRow(inComponent: 0)
+        let row2 = pickerView.selectedRow(inComponent: 1)
+        let row3 = pickerView.selectedRow(inComponent: 2)
+        
+        appDelegate.tonality = self.pickerView(pickerView, titleForRow: row2, forComponent: 1)
+        appDelegate.NumOfAccidental = Int(self.pickerView(pickerView, titleForRow: row3,forComponent: 2)!)!
+        print(compos[component][row])
     }
-    /*
-     ボタンイベント.
-     */
+
     internal func onClickMyButton(sender: UIButton){        
-        // 遷移するViewを定義.
         let myViewController: UIViewController = SpectralViewController()
         
-        // アニメーションを設定.
         myViewController.modalTransitionStyle = UIModalTransitionStyle.flipHorizontal
         
-                
-        // Viewの移動.
         self.present(myViewController, animated: true, completion: nil)
     }
-    
-//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        let spectralViewController = segue.destination as! SpectralViewController
-//        spectralViewController.selectedTonality = "moved"
-//        
-//    }
-
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

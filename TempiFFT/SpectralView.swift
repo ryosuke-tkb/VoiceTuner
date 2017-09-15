@@ -31,7 +31,7 @@ class SpectralView: UIView {
         "B":11
     ]
     private var pitchArray: [String] = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
-    var isDebugMode = false
+    var isDebugMode: Bool = false
     
     func prepareNoteImage(){
         let noteRect = CGRect(x: 0, y: 0, width: 30, height: 30)
@@ -57,6 +57,7 @@ class SpectralView: UIView {
         
         let context = UIGraphicsGetCurrentContext()
         
+        // draw note only if the last 3 calculated midiNNs are the same 
         if Set(midiNNhistory).count == 1 {
             if (midiNN! < 47) {
                 self.subviews[0].isHidden = true
@@ -128,23 +129,20 @@ class SpectralView: UIView {
             
             if let labelView = self.viewWithTag(100) {
                 labelView.removeFromSuperview()
-                
-                let pitchInfoLabel: UILabel = UILabel(frame: CGRect(x: 10, y: 10, width: 200, height: 20))
-                pitchInfoLabel.backgroundColor = UIColor.orange
-                pitchInfoLabel.text = String(guessedFreq!) + "Hz:  " + String(midiNN!) + "  " + pitchArray[midiNN! % 12] + String(midiNN! / 12)
-                pitchInfoLabel.textColor = UIColor.white
-                pitchInfoLabel.tag = 100
-                self.addSubview(pitchInfoLabel)
-            }else {
-                print("no view")
-                
-                let pitchInfoLabel: UILabel = UILabel(frame: CGRect(x: 10, y: 10, width: 200, height: 20))
-                pitchInfoLabel.backgroundColor = UIColor.orange
-                pitchInfoLabel.text = String(guessedFreq!) + "Hz:  " + String(midiNN!) + "  " + pitchArray[midiNN! % 12] + String(midiNN! / 12)
-                pitchInfoLabel.textColor = UIColor.white
-                pitchInfoLabel.tag = 100
-                self.addSubview(pitchInfoLabel)
             }
+            
+            let pitchInfoLabel: UILabel = UILabel()
+            pitchInfoLabel.backgroundColor = UIColor.orange
+            pitchInfoLabel.text = String(guessedFreq!) + "Hz:  " + String(midiNN!) + "  " + pitchArray[midiNN! % 12] + String(midiNN! / 12)
+            pitchInfoLabel.textColor = UIColor.white
+            pitchInfoLabel.tag = 100
+            pitchInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+            self.addSubview(pitchInfoLabel)
+            
+            pitchInfoLabel.topAnchor.constraint(equalTo: self.bottomAnchor, constant: -40).isActive = true
+            pitchInfoLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
+            pitchInfoLabel.widthAnchor.constraint(equalTo: self.widthAnchor, multiplier: 0.8).isActive = true
+            pitchInfoLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
         }
     }
     

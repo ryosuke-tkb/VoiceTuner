@@ -27,7 +27,6 @@ class SettingViewController: UIViewController, UIPickerViewDelegate, UIPickerVie
         backButton.addTarget(self, action: #selector(onClickMyButton(sender:)), for: .touchUpInside)
         self.view.addSubview(backButton)
         
-        
         // AutoLayout
         backButton.topAnchor.constraint(equalTo: self.view.topAnchor, constant: 30.0).isActive = true
         backButton.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 30.0).isActive = true
@@ -39,7 +38,6 @@ class SettingViewController: UIViewController, UIPickerViewDelegate, UIPickerVie
         picker.delegate = self
         picker.dataSource = self
         picker.selectRow(1, inComponent: 0, animated: true)
-        
         self.view.addSubview(picker)
         
         // AutoLayout

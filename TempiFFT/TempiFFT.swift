@@ -60,8 +60,6 @@ import Accelerate
     // After performing the FFT, contains size/2 magnitudes, one for each frequency band.
     private var magnitudes: [Float]!
     
-    private var fftRawOutput: [Float]!
-    
     // [ryo] magnitude for Cepstrum analysis
     private var cepMagnitudes: [Float]!
     
@@ -93,13 +91,10 @@ import Accelerate
     private var fftSetup:FFTSetup
     private var hasPerformedFFT: Bool = false
     private var complexBuffer: DSPSplitComplex!
-    private var copyComplexBuffer: DSPSplitComplex!
-    // [ryo] for Cepstrum analysis
-    private var cepComplexBuffer: DSPSplitComplex!
     
-    // [ryo]
-    private var cepstrum: [Float]!
-    
+    private(set) var freq: Float = 0.0
+    private(set) var midiNN: Int = 0
+        
     /// Instantiate the FFT.
     /// - Parameter withSize: The length of the sample buffer we'll be analyzing. Must be a power of 2. The resulting ```magnitudes``` are of length ```inSize/2```.
     /// - Parameter sampleRate: Sampling rate of the provided audio data.
@@ -124,17 +119,6 @@ import Accelerate
         var real = [Float](repeating: 0.0, count: self.halfSize)
         var imaginary = [Float](repeating: 0.0, count: self.halfSize)
         self.complexBuffer = DSPSplitComplex(realp: &real, imagp: &imaginary)
-        
-        // [ryo] Init the copyComplexBuffer
-        var copyReal = [Float](repeating: 0.0, count: self.size)
-        var copyImaginary = [Float](repeating: 0.0, count: self.size)
-        self.complexBuffer = DSPSplitComplex(realp: &copyReal, imagp: &copyImaginary)
-
-        
-        // [ryo] Init cepComplexBuffer
-        var cepReal = [Float](repeating: 0.0, count: self.halfSize)
-        var cepImaginary = [Float](repeating: 0.0, count: self.halfSize)
-        self.cepComplexBuffer = DSPSplitComplex(realp: &cepReal, imagp: &cepImaginary)
     }
     
     deinit {
@@ -208,115 +192,6 @@ import Accelerate
         vDSP_zvmags(&(self.complexBuffer!), 1, &self.magnitudes!, 1, UInt(self.halfSize))
         
         self.hasPerformedFFT = true
-        
-        self.cepstrum = calculateCepstrum(analysisBuffer)
-        
-        // [ryo]this part task is to calculate cepstrum
-         
-        self.fftRawOutput = [Float](repeating: 0.0, count: self.size)
-        //        vDSP_zvmags(&(self.complexBuffer!), 1, &self.fftRawOutput!, 1, UInt(self.size))
-        for i in 0 ..< self.size {
-        if (i < self.halfSize) {
-            self.fftRawOutput[i] = self.magnitudes[i]
-            }else{
-            self.fftRawOutput[i] = self.magnitudes[self.size - i - 1]
-            }
-        }
-        
-//        let magLog: [Float] = self.fftRawOutput.map{log10f($0)}
-//        var cepAnalysisBuffer = magLog
-////        if self.windowType != .none {
-////            
-////            if self.window == nil {
-////                self.window = [Float](repeating: 0.0, count: size)
-////                
-////                switch self.windowType {
-////                case .hamming:
-////                    vDSP_hann_window(&self.window!, UInt(size), Int32(vDSP_HANN_NORM))
-////                case .hanning:
-////                    vDSP_hamm_window(&self.window!, UInt(size), 0)
-////                default:
-////                    break
-////                }
-////            }
-////            
-////            // Apply the window
-////            vDSP_vmul(magLog, 1, self.window, 1, &cepAnalysisBuffer, 1, UInt(magLog.count))
-////        }
-//        
-//        // Doing the job of vDSP_ctoz 😒. (See below.)
-//        var cepReals = [Float]()
-//        var cepImags = [Float]()
-//        
-//        //
-//        // enumerated is equai withindex
-//        for (idx, element) in cepAnalysisBuffer.enumerated() {
-//            if idx % 2 == 0 {
-//                cepReals.append(element)
-//            } else {
-//                cepImags.append(element)
-//            }
-//        }
-//        
-//        let logSize :Float = Float(cepAnalysisBuffer.count)
-//        let loglogSize :Int  = Int(log2f(logSize))
-//        self.cepComplexBuffer = DSPSplitComplex(realp: UnsafeMutablePointer(mutating: cepReals), imagp: UnsafeMutablePointer(mutating: cepImags))
-//        vDSP_fft_zrip(self.fftSetup, &(self.cepComplexBuffer!), 1, UInt(self.log2Size), Int32(FFT_INVERSE))
-//        
-//        self.cepMagnitudes = [Float](repeating: 0.0, count: self.halfSize)
-//        vDSP_zvmags(&(self.cepComplexBuffer!), 1, &self.cepMagnitudes!, 1, UInt(self.halfSize))
-//        print("cepMagnitude.count = \(cepMagnitudes.count)")
-//        for i in 0..<cepMagnitudes.count {
-//            if cepMagnitudes[i].isNaN {
-//                print("index \(i) is Nan")
-//            }else{
-//                    print(cepMagnitudes[i])
-//            }
-//        }
-        
-    }
- 
-    // [ryo]
-    func getHalfSize() -> Int {
-        assert(hasPerformedFFT, "*** Perform the FFT first.")
-        return self.halfSize
-    }
-    
-    // [ryo]
-    func getMagnitudes(_ index: Int) -> Float {
-        assert(hasPerformedFFT, "*** Perform the FFT first.")
-        if (index < 0 || index > self.halfSize - 1) {
-            return 0.0
-        } else {
-            return self.magnitudes[index]
-        }
-    }
-    
-    // [ryo]
-    func getFftRawOutput(_ index: Int) -> Float {
-        assert(hasPerformedFFT, "*** Perform the FFT first.")
-        if (index < 0 || index > self.size) {
-            return 0.0
-        } else {
-            return self.fftRawOutput[index]
-        }
-    }
-    
-    // [ryo]
-    func getCepOutputReal(_ index: Int) -> Float {
-        assert(hasPerformedFFT, "*** Perform the FFT first.")
-        let pointer :UnsafeMutablePointer = self.cepComplexBuffer.realp
-        if (index < 0 || index > self.halfSize) {
-            return 0.0
-        }else {
-        return pointer[index]
-        }
-    }
-    
-//    // [ryo]
-    func getCepstrum() -> [Float] {
-        assert(hasPerformedFFT, "*** Perform the FFT first.")
-        return self.cepstrum
     }
     
     /// Applies logical banding on top of the spectrum data. The bands are spaced linearly throughout the spectrum.
@@ -446,17 +321,6 @@ import Accelerate
         return bandMagnitudes[inBand]
     }
     
-    
-    // [ryo] return cepstrum coefficient
-//    func cepMagnitudeAtIndex(_ inBand: Int) -> Float {
-//        assert(hasPerformedFFT, "*** Perform the FFT first.")
-//        if (inBand < 0 || inBand > self.halfSize) {
-//            return 0.0
-//        }
-//        
-//        return self.cepMagnitudes[inBand]
-//    }
-    
     /// Get the magnitude of the requested frequency in the spectrum.
     /// - Parameter inFrequency: The requested frequency. Must be less than the Nyquist frequency (```sampleRate/2```).
     /// - Returns: A magnitude.
@@ -507,71 +371,109 @@ import Accelerate
         return total
     }
     
-    
-    
-    func calculateCepstrum(_ inMonoBuffer:[Float]) -> [Float]{
-        let samples = inMonoBuffer
-        let inputSize = inMonoBuffer.count
+ 
+    func calculateCepstrum(_ inBuffer:[Float]) -> [Double] {
+        // cast float to double
+        let doubleInBuffer = inBuffer.map{Double($0)}
+        var samples = doubleInBuffer
+        let inputSize :Int = samples.count
         
-        var reals = [Float](repeating: 0.0, count: inputSize)
-        var imgs = [Float](repeating: 0.0, count: inputSize)
-        var splitComplex = DSPSplitComplex(realp: &reals, imagp: &imgs)
-        let src :UnsafePointer<DSPComplex> = UnsafeRawPointer(samples).bindMemory(to: DSPComplex.self, capacity: inputSize)
-        vDSP_ctoz(src, 2, &splitComplex, 1, vDSP_Length(inputSize/2))
+        // multiple hamming window
+        var window = [Double](repeating: 0.0, count: inputSize)
+        vDSP_hamm_windowD(&window, UInt(inputSize), 0)
+        vDSP_vmulD(doubleInBuffer, 1, window, 1, &samples, 1, UInt(inputSize))
         
-        let fftSize = 512
+        
+        // prepare for using vDSP library
+        var reals = [Double](repeating: 0.0, count: inputSize/2)
+        var imgs = [Double](repeating: 0.0, count: inputSize/2)
+        var splitComplex = DSPDoubleSplitComplex(realp: &reals, imagp: &imgs)
+        let complexBuffer :UnsafePointer<DSPDoubleComplex> = UnsafeRawPointer(samples).bindMemory(to: DSPDoubleComplex.self, capacity: inputSize)
+        
+        // convert <DSPDoubleComplex> to <DSPDoubleSplitComplex>
+        vDSP_ctozD(complexBuffer, 2, &splitComplex, 1, vDSP_Length(inputSize/2))
+        
+        // create fftSetup for FFT
+        let fftSize = inputSize
         let log2fftSize = vDSP_Length(log2(Double(fftSize)))
+        let setup = vDSP_create_fftsetupD(log2fftSize, FFTRadix(FFT_RADIX2))
         
-        let setup = vDSP_create_fftsetup(log2fftSize, FFTRadix(FFT_RADIX2))
+        // perform FFT
+        vDSP_fft_zripD(setup!, &splitComplex, 1, log2fftSize, FFTDirection(FFT_FORWARD))
         
-        vDSP_fft_zrip(setup!, &splitComplex, 1, log2fftSize, FFTDirection(FFT_FORWARD))
+        // multiply FFT output by 1/2
+        var scale :Double = 1/2
+        vDSP_vsmulD(splitComplex.realp, 1, &scale, splitComplex.realp, 1, vDSP_Length(inputSize/2))
+        vDSP_vsmulD(splitComplex.imagp, 1, &scale, splitComplex.imagp, 1, vDSP_Length(inputSize/2))
         
-        var scale :Float = 1/2
-        vDSP_vsmul(splitComplex.realp, 1, &scale, splitComplex.realp, 1, vDSP_Length(inputSize/2))
-        vDSP_vsmul(splitComplex.imagp, 1, &scale, splitComplex.imagp, 1, vDSP_Length(inputSize/2))
+        // copy FFT output
+        let fftRealValue = splitComplex.realp
+        let fftImagValue = splitComplex.imagp
         
-        let fftOutputReal = Array(UnsafeBufferPointer(start: splitComplex.realp, count: inputSize/2))
-        let fftOutputImag = Array(UnsafeBufferPointer(start: splitComplex.imagp, count: inputSize/2))
-        
-        var magnitudes = [Float]()
+        var magnitudes = [Double]()
         
         for index in 0 ..< inputSize {
             if (index < inputSize/2) {
-                let ri = fftOutputReal[index]
-                let ii = fftOutputImag[index]
-                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
+                let ri = fftRealValue.advanced(by: index).pointee
+                let ii = fftImagValue.advanced(by: index).pointee
+                magnitudes.append(20 * log10(sqrt(ri * ri + ii * ii)))
             }else{
-                let ri = fftOutputReal[inputSize - index - 1]
-                let ii = fftOutputImag[inputSize - index - 1]
-                magnitudes.append(log10f(sqrt(ri * ri + ii * ii)))
+                let ri = fftRealValue.advanced(by: inputSize - index - 1).pointee
+                let ii = fftImagValue.advanced(by: inputSize - index - 1).pointee
+                magnitudes.append(20 * log10(sqrt(ri * ri + ii * ii)))
             }
         }
         
-        var ifftInputReal = [Float](repeating: 0.0, count: fftSize/2)
-        var ifftInputImag = [Float](repeating: 0.0, count: fftSize/2)
-        var ifftSplitComplex = DSPSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
-        let ifftSplitComplexSrc :UnsafePointer<DSPComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPComplex.self, capacity: fftSize)
-        vDSP_ctoz(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(fftSize/2))
+        var ifftInputReal = [Double](repeating: 0.0, count: inputSize/2)
+        var ifftInputImag = [Double](repeating: 0.0, count: inputSize/2)
+        var ifftSplitComplex = DSPDoubleSplitComplex(realp: &ifftInputReal, imagp: &ifftInputImag)
+        let ifftSplitComplexSrc :UnsafePointer<DSPDoubleComplex> = UnsafeRawPointer(magnitudes).bindMemory(to: DSPDoubleComplex.self, capacity: inputSize)
         
-        vDSP_fft_zrip(setup!, &ifftSplitComplex, 1, log2fftSize, FFTDirection(FFT_INVERSE))
+        // convert <DSPDoubleComplex> to <DSPDoubleSplitComplex>
+        vDSP_ctozD(ifftSplitComplexSrc, 2, &ifftSplitComplex, 1, vDSP_Length(inputSize/2))
         
-        vDSP_vsmul(ifftSplitComplex.realp, 1, &scale, ifftSplitComplex.realp, 1, vDSP_Length(fftSize/2))
-        vDSP_vsmul(ifftSplitComplex.imagp, 1, &scale, ifftSplitComplex.imagp, 1, vDSP_Length(fftSize/2))
+        // create ifftSetup for IFFT
+        let ifftSetup = vDSP_create_fftsetupD(log2fftSize, FFTRadix(FFT_RADIX2))
         
+        // perform IFFT
+        vDSP_fft_zripD(ifftSetup!, &ifftSplitComplex, 1, UInt(log2fftSize), Int32(FFTDirection(FFT_INVERSE)))
+        
+        // multiply ifft output by 1/inputSize
+        var ifftScale :Double = 1/Double(inputSize)
+        vDSP_vsmulD(ifftSplitComplex.realp, 1, &ifftScale, ifftSplitComplex.realp, 1, vDSP_Length(inputSize/2))
+        vDSP_vsmulD(ifftSplitComplex.imagp, 1, &ifftScale, ifftSplitComplex.imagp, 1, vDSP_Length(inputSize/2))
+        
+        // copy IFFT output
         let ifftOutputReal = Array(UnsafeBufferPointer(start: ifftSplitComplex.realp, count: fftSize/2))
         let ifftOutputImag = Array(UnsafeBufferPointer(start: ifftSplitComplex.imagp, count: fftSize/2))
-
-        var cepstrum = [Float]()
+        
+        // calculate magnitude from IFFT output (they are complex number)
+        var cepstrum = [Double]()
         for index in 0 ..< fftSize/2 {
             let ri = ifftOutputReal[index]
             let ii = ifftOutputImag[index]
             cepstrum.append(sqrt(ri * ri + ii * ii))
         }
         
-        vDSP_destroy_fftsetup(setup)
+        // destroy fft setup
+        vDSP_destroy_fftsetupD(setup)
+        vDSP_destroy_fftsetupD(ifftSetup)
+        
+        calculateMidiNN(cepstrum)
+        
         return cepstrum
     }
- 
+    
+    func calculateMidiNN(_ cepstrum: [Double]) {
+        // get max value's index
+        let (maxI, _) = cepstrum[100...411].enumerated().max(by: {$0.element < $1.element})!
+        
+        // calculate frequency from max value's index
+        self.freq = Float(44100/(maxI+100))
+        
+        // convert frequency to MIDI note number
+        self.midiNN = 69 + Int(round(12 * log2f(Float(freq)/440)))
+    }
     
     /// A convenience function that converts a linear magnitude (like those stored in ```magnitudes```) to db (which is log 10).
     class func toDB(_ inMagnitude: Float) -> Float {
